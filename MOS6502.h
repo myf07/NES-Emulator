@@ -1,4 +1,6 @@
 #include <cstdint>
+#include <string>
+#include <vector>
 
 // Forward declare Bus
 class Bus;
@@ -141,5 +143,12 @@ private:
     uint8_t GetFlag(PFLAGS flag);
     void SetFlag(PFLAGS flag, bool value);
 
-    // TODO: Implement the instruction lookup table
+    struct Instruction {
+        std::string name;
+        uint8_t (MOS6502::*Operation) (void) = nullptr;
+        uint8_t (MOS6502::*AddrMode) (void) = nullptr;
+        uint8_t cycles = 0;
+    };
+
+    std::vector<Instruction> lookup;
 };

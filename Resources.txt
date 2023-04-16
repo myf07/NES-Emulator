@@ -1,0 +1,14 @@
+1. (!) Video Series: https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+2. (!) GitHub Repo w/ Code: https://github.com/OneLoneCoder/olcNES
+3. (!) Nesdev Wiki: https://www.nesdev.org/wiki/Nesdev_Wiki
+4. MOS 6502 Manual: http://archive.6502.org/datasheets/rockwell_r650x_r651x.pdf
+5. MOS 6502 Manual 2: https://www.princeton.edu/~mae412/HANDOUTS/Datasheets/6502.pdf
+6. Blog Post w/ 6502 details: http://www.emulator101.com/6502-addressing-modes.html
+7. 6502 Central Hub: http://www.6502.org/
+8. 6502 Assembly Language Playground: https://skilldrick.github.io/easy6502/
+9. Fun video of dude making emulator in 30 min: https://www.youtube.com/watch?v=XZWw745wPXY
+10. Another NES Emulator repo: https://www.reddit.com/r/EmuDev/comments/dy177r/i_wrote_a_nes_emulator_in_c/
+11. (!) Blog post detailing roadmap: https://yizhang82.dev/blog/nes/
+12. (!) Simple DirectMedia Layer: https://www.libsdl.org/
+
+(!) - Denotes a very important resource.

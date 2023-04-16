@@ -130,70 +130,70 @@ MOS6502::MOS6502() {
                 {"ADC", &MOS6502::ADC, &MOS6502::AbsoluteX, 4}, // 0x7D
                 {"ROR", &MOS6502::ROR, &MOS6502::AbsoluteX, 7}, // 0x7E
                 {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x7F
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"STA", &MOS6502::STA, &MOS6502::IZX, 6},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 6},
-             {"STY", &MOS6502::STY, &MOS6502::ZP0, 3},
-             {"STA", &MOS6502::STA, &MOS6502::ZP0, 3},
-             {"STX", &MOS6502::STX, &MOS6502::ZP0, 3},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 3},
-             {"DEY", &MOS6502::DEY, &MOS6502::IMP, 2},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"TXA", &MOS6502::TXA, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 2},
-             {"STY", &MOS6502::STY, &MOS6502::ABS, 4},
-             {"STA", &MOS6502::STA, &MOS6502::ABS, 4},
-             {"STX", &MOS6502::STX, &MOS6502::ABS, 4},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 4},
-             {"BCC", &MOS6502::BCC, &MOS6502::REL, 2},
-             {"STA", &MOS6502::STA, &MOS6502::IZY, 6},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 6},
-             {"STY", &MOS6502::STY, &MOS6502::ZPX, 4},
-             {"STA", &MOS6502::STA, &MOS6502::ZPX, 4},
-             {"STX", &MOS6502::STX, &MOS6502::ZPY, 4},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 4},
-             {"TYA", &MOS6502::TYA, &MOS6502::IMP, 2},
-             {"STA", &MOS6502::STA, &MOS6502::ABY, 5},
-             {"TXS", &MOS6502::TXS, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 5},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 5},
-             {"STA", &MOS6502::STA, &MOS6502::ABX, 5},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 5},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 5},
-             {"LDY", &MOS6502::LDY, &MOS6502::IMM, 2},
-             {"LDA", &MOS6502::LDA, &MOS6502::IZX, 6},
-             {"LDX", &MOS6502::LDX, &MOS6502::IMM, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 6},
-             {"LDY", &MOS6502::LDY, &MOS6502::ZP0, 3},
-             {"LDA", &MOS6502::LDA, &MOS6502::ZP0, 3},
-             {"LDX", &MOS6502::LDX, &MOS6502::ZP0, 3},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 3},
-             {"TAY", &MOS6502::TAY, &MOS6502::IMP, 2},
-             {"LDA", &MOS6502::LDA, &MOS6502::IMM, 2},
-             {"TAX", &MOS6502::TAX, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 2},
-             {"LDY", &MOS6502::LDY, &MOS6502::ABS, 4},
-             {"LDA", &MOS6502::LDA, &MOS6502::ABS, 4},
-             {"LDX", &MOS6502::LDX, &MOS6502::ABS, 4},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 4},
-             {"BCS", &MOS6502::BCS, &MOS6502::REL, 2},
-             {"LDA", &MOS6502::LDA, &MOS6502::IZY, 5},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 5},
-             {"LDY", &MOS6502::LDY, &MOS6502::ZPX, 4},
-             {"LDA", &MOS6502::LDA, &MOS6502::ZPX, 4},
-             {"LDX", &MOS6502::LDX, &MOS6502::ZPY, 4},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 4},
-             {"CLV", &MOS6502::CLV, &MOS6502::IMP, 2},
-             {"LDA", &MOS6502::LDA, &MOS6502::ABY, 4},
-             {"TSX", &MOS6502::TSX, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 4},
-             {"LDY", &MOS6502::LDY, &MOS6502::ABX, 4},
-             {"LDA", &MOS6502::LDA, &MOS6502::ABX, 4},
-             {"LDX", &MOS6502::LDX, &MOS6502::ABY, 4},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 4},
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x80
+                {"STA", &MOS6502::STA, &MOS6502::IndexedIndirect, 6}, // 0x81
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x82
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x83
+                {"STY", &MOS6502::STY, &MOS6502::ZeroPage, 3}, // 0x84
+                {"STA", &MOS6502::STA, &MOS6502::ZeroPage, 3}, // 0x85
+                {"STX", &MOS6502::STX, &MOS6502::ZeroPage, 3}, // 0x86
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x87
+                {"DEY", &MOS6502::DEY, &MOS6502::Implicit, 2}, // 0x88
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x89
+                {"TXA", &MOS6502::TXA, &MOS6502::Implicit, 2}, // 0x8A
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x8B
+                {"STY", &MOS6502::STY, &MOS6502::Absolute, 4}, // 0x8C
+                {"STA", &MOS6502::STA, &MOS6502::Absolute, 4}, // 0x8D
+                {"STX", &MOS6502::STX, &MOS6502::Absolute, 4}, // 0x8E
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x8F
+                {"BCC", &MOS6502::BCC, &MOS6502::Relative, 2}, // 0x90
+                {"STA", &MOS6502::STA, &MOS6502::IndirectIndexed, 6}, // 0x91
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x92
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x93
+                {"STY", &MOS6502::STY, &MOS6502::ZeroPageX, 4}, // 0x94
+                {"STA", &MOS6502::STA, &MOS6502::ZeroPageX, 4}, // 0x95
+                {"STX", &MOS6502::STX, &MOS6502::ZeroPageY, 4}, // 0x96
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x97
+                {"TYA", &MOS6502::TYA, &MOS6502::Implicit, 2}, // 0x98
+                {"STA", &MOS6502::STA, &MOS6502::AbsoluteY, 5}, // 0x99
+                {"TXS", &MOS6502::TXS, &MOS6502::Implicit, 2}, // 0x9A
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x9B
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x9C
+                {"STA", &MOS6502::STA, &MOS6502::AbsoluteX, 5}, // 0x9D
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x9E
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x9F
+                {"LDY", &MOS6502::LDY, &MOS6502::Immediate, 2}, // 0xA0
+                {"LDA", &MOS6502::LDA, &MOS6502::IndexedIndirect, 6}, // 0xA1
+                {"LDX", &MOS6502::LDX, &MOS6502::Immediate, 2}, // 0xA2
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xA3
+                {"LDY", &MOS6502::LDY, &MOS6502::ZeroPage, 3}, // 0xA4
+                {"LDA", &MOS6502::LDA, &MOS6502::ZeroPage, 3}, // 0xA5
+                {"LDX", &MOS6502::LDX, &MOS6502::ZeroPage, 3}, // 0xA6
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xA7
+                {"TAY", &MOS6502::TAY, &MOS6502::Implicit, 2}, // 0xA8
+                {"LDA", &MOS6502::LDA, &MOS6502::Immediate, 2}, // 0xA9
+                {"TAX", &MOS6502::TAX, &MOS6502::Implicit, 2}, // 0xAA
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xAB
+                {"LDY", &MOS6502::LDY, &MOS6502::Absolute, 4}, // 0xAC
+                {"LDA", &MOS6502::LDA, &MOS6502::Absolute, 4}, // 0xAD
+                {"LDX", &MOS6502::LDX, &MOS6502::Absolute, 4}, // 0xAE
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xAF
+                {"BCS", &MOS6502::BCS, &MOS6502::Relative, 2}, // 0xB0
+                {"LDA", &MOS6502::LDA, &MOS6502::IndirectIndexed, 5}, // 0xB1
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xB2
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xB3
+                {"LDY", &MOS6502::LDY, &MOS6502::ZeroPageX, 4}, // 0xB4
+                {"LDA", &MOS6502::LDA, &MOS6502::ZeroPageX, 4}, // 0xB5
+                {"LDX", &MOS6502::LDX, &MOS6502::ZeroPageY, 4}, // 0xB6
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xB7
+                {"CLV", &MOS6502::CLV, &MOS6502::Implicit, 2}, // 0xB8
+                {"LDA", &MOS6502::LDA, &MOS6502::AbsoluteY, 4}, // 0xB9
+                {"TSX", &MOS6502::TSX, &MOS6502::Implicit, 2}, // 0xBA
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xBB
+                {"LDY", &MOS6502::LDY, &MOS6502::AbsoluteX, 4}, // 0xBC
+                {"LDA", &MOS6502::LDA, &MOS6502::AbsoluteX, 4}, // 0xBD
+                {"LDX", &MOS6502::LDX, &MOS6502::AbsoluteY, 4}, // 0xBE
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xBF
              {"CPY", &MOS6502::CPY, &MOS6502::IMM, 2},
              {"CMP", &MOS6502::CMP, &MOS6502::IZX, 6},
              {"???", &MOS6502::NOP, &MOS6502::IMP, 2},

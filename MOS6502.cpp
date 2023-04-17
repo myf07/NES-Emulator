@@ -1,5 +1,6 @@
 #include "Bus.h"
 
+// Constructor for CPU
 MOS6502::MOS6502() {
     lookup = {
                 {"BRK", &MOS6502::BRK, &MOS6502::Implicit, 7}, // 0x00
@@ -194,81 +195,372 @@ MOS6502::MOS6502() {
                 {"LDA", &MOS6502::LDA, &MOS6502::AbsoluteX, 4}, // 0xBD
                 {"LDX", &MOS6502::LDX, &MOS6502::AbsoluteY, 4}, // 0xBE
                 {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xBF
-             {"CPY", &MOS6502::CPY, &MOS6502::IMM, 2},
-             {"CMP", &MOS6502::CMP, &MOS6502::IZX, 6},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 8},
-             {"CPY", &MOS6502::CPY, &MOS6502::ZP0, 3},
-             {"CMP", &MOS6502::CMP, &MOS6502::ZP0, 3},
-             {"DEC", &MOS6502::DEC, &MOS6502::ZP0, 5},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 5},
-             {"INY", &MOS6502::INY, &MOS6502::IMP, 2},
-             {"CMP", &MOS6502::CMP, &MOS6502::IMM, 2},
-             {"DEX", &MOS6502::DEX, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 2},
-             {"CPY", &MOS6502::CPY, &MOS6502::ABS, 4},
-             {"CMP", &MOS6502::CMP, &MOS6502::ABS, 4},
-             {"DEC", &MOS6502::DEC, &MOS6502::ABS, 6},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 6},
-             {"BNE", &MOS6502::BNE, &MOS6502::REL, 2},
-             {"CMP", &MOS6502::CMP, &MOS6502::IZY, 5},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 8},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 4},
-             {"CMP", &MOS6502::CMP, &MOS6502::ZPX, 4},
-             {"DEC", &MOS6502::DEC, &MOS6502::ZPX, 6},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 6},
-             {"CLD", &MOS6502::CLD, &MOS6502::IMP, 2},
-             {"CMP", &MOS6502::CMP, &MOS6502::ABY, 4},
-             {"NOP", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 7},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 4},
-             {"CMP", &MOS6502::CMP, &MOS6502::ABX, 4},
-             {"DEC", &MOS6502::DEC, &MOS6502::ABX, 7},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 7},
-             {"CPX", &MOS6502::CPX, &MOS6502::IMM, 2},
-             {"SBC", &MOS6502::SBC, &MOS6502::IZX, 6},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 8},
-             {"CPX", &MOS6502::CPX, &MOS6502::ZP0, 3},
-             {"SBC", &MOS6502::SBC, &MOS6502::ZP0, 3},
-             {"INC", &MOS6502::INC, &MOS6502::ZP0, 5},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 5},
-             {"INX", &MOS6502::INX, &MOS6502::IMP, 2},
-             {"SBC", &MOS6502::SBC, &MOS6502::IMM, 2},
-             {"NOP", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"???", &MOS6502::SBC, &MOS6502::IMP, 2},
-             {"CPX", &MOS6502::CPX, &MOS6502::ABS, 4},
-             {"SBC", &MOS6502::SBC, &MOS6502::ABS, 4},
-             {"INC", &MOS6502::INC, &MOS6502::ABS, 6},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 6},
-             {"BEQ", &MOS6502::BEQ, &MOS6502::REL, 2},
-             {"SBC", &MOS6502::SBC, &MOS6502::IZY, 5},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 8},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 4},
-             {"SBC", &MOS6502::SBC, &MOS6502::ZPX, 4},
-             {"INC", &MOS6502::INC, &MOS6502::ZPX, 6},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 6},
-             {"SED", &MOS6502::SED, &MOS6502::IMP, 2},
-             {"SBC", &MOS6502::SBC, &MOS6502::ABY, 4},
-             {"NOP", &MOS6502::NOP, &MOS6502::IMP, 2},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 7},
-             {"???", &MOS6502::NOP, &MOS6502::IMP, 4},
-             {"SBC", &MOS6502::SBC, &MOS6502::ABX, 4},
-             {"INC", &MOS6502::INC, &MOS6502::ABX, 7},
-             {"???", &MOS6502::XXX, &MOS6502::IMP, 7},
-            };
+                {"CPY", &MOS6502::CPY, &MOS6502::Immediate, 2}, // 0xC0
+                {"CMP", &MOS6502::CMP, &MOS6502::IndexedIndirect, 6}, // 0xC1
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xC2
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xC3
+                {"CPY", &MOS6502::CPY, &MOS6502::ZeroPage, 3}, // 0xC4
+                {"CMP", &MOS6502::CMP, &MOS6502::ZeroPage, 3}, // 0xC5
+                {"DEC", &MOS6502::DEC, &MOS6502::ZeroPage, 5}, // 0xC6
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xC7
+                {"INY", &MOS6502::INY, &MOS6502::Implicit, 2}, // 0xC8
+                {"CMP", &MOS6502::CMP, &MOS6502::Immediate, 2}, // 0xC9
+                {"DEX", &MOS6502::DEX, &MOS6502::Implicit, 2}, // 0xCA
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xCB
+                {"CPY", &MOS6502::CPY, &MOS6502::Absolute, 4}, // 0xCC
+                {"CMP", &MOS6502::CMP, &MOS6502::Absolute, 4}, // 0xCD
+                {"DEC", &MOS6502::DEC, &MOS6502::Absolute, 6}, // 0xCE
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xCF
+                {"BNE", &MOS6502::BNE, &MOS6502::Relative, 2}, // 0xD0
+                {"CMP", &MOS6502::CMP, &MOS6502::IndirectIndexed, 5}, // 0xD1
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xD2
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xD3
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xD4
+                {"CMP", &MOS6502::CMP, &MOS6502::ZeroPageX, 4}, // 0xD5
+                {"DEC", &MOS6502::DEC, &MOS6502::ZeroPageX, 6}, // 0xD6
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xD7
+                {"CLD", &MOS6502::CLD, &MOS6502::Implicit, 2}, // 0xD8
+                {"CMP", &MOS6502::CMP, &MOS6502::AbsoluteY, 4}, // 0xD9
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xDA
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xDB
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xDC
+                {"CMP", &MOS6502::CMP, &MOS6502::AbsoluteX, 4}, // 0xDD
+                {"DEC", &MOS6502::DEC, &MOS6502::AbsoluteX, 7}, // 0xDE
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xDF
+                {"CPX", &MOS6502::CPX, &MOS6502::Immediate, 2}, // 0xE0
+                {"SBC", &MOS6502::SBC, &MOS6502::IndexedIndirect, 6}, // 0xE1
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xE2
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xE3
+                {"CPX", &MOS6502::CPX, &MOS6502::ZeroPage, 3}, // 0xE4
+                {"SBC", &MOS6502::SBC, &MOS6502::ZeroPage, 3}, // 0xE5
+                {"INC", &MOS6502::INC, &MOS6502::ZeroPage, 5}, // 0xE6
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xE7
+                {"INX", &MOS6502::INX, &MOS6502::Implicit, 2}, // 0xE8
+                {"SBC", &MOS6502::SBC, &MOS6502::Immediate, 2}, // 0xE9
+                {"NOP", &MOS6502::NOP, &MOS6502::Implicit, 2}, // 0xEA
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xEB
+                {"CPX", &MOS6502::CPX, &MOS6502::Absolute, 4}, // 0xEC
+                {"SBC", &MOS6502::SBC, &MOS6502::Absolute, 4}, // 0xED
+                {"INC", &MOS6502::INC, &MOS6502::Absolute, 6}, // 0xEE
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xEF
+                {"BEQ", &MOS6502::BEQ, &MOS6502::Relative, 2}, // 0xF0
+                {"SBC", &MOS6502::SBC, &MOS6502::IndirectIndexed, 5}, // 0xF1
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xF2
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xF3
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xF4
+                {"SBC", &MOS6502::SBC, &MOS6502::ZeroPageX, 4}, // 0xF5
+                {"INC", &MOS6502::INC, &MOS6502::ZeroPageX, 6}, // 0xF6
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xF7
+                {"SED", &MOS6502::SED, &MOS6502::Implicit, 2}, // 0xF8
+                {"SBC", &MOS6502::SBC, &MOS6502::AbsoluteY, 4}, // 0xF9
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xFA
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xFB
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xFC
+                {"SBC", &MOS6502::SBC, &MOS6502::AbsoluteX, 4}, // 0xFD
+                {"INC", &MOS6502::INC, &MOS6502::AbsoluteX, 7}, // 0xFE
+                {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0xFF
+             };
 }
 
+// Destructor for CPU
 MOS6502::~MOS6502() {
 
 }
 
+// Wrapper for reading from bus
 uint8_t MOS6502::Read(uint16_t addr) {
     return bus->Read(addr, false);
 }
 
+// Wrapper for writing to bus
 void MOS6502::Write(uint16_t addr, uint8_t data) {
     bus->Write(addr, data);
+}
+
+////////////////////////
+/// Addressing Modes ///
+////////////////////////
+
+uint8_t MOS6502::Implicit() {
+    return 0;
+}
+
+uint8_t MOS6502::Accumulator() {
+    return 0;
+}
+
+uint8_t MOS6502::Immediate() {
+    return 0;
+}
+
+uint8_t MOS6502::ZeroPage() {
+    return 0;
+}
+
+uint8_t MOS6502::ZeroPageX() {
+    return 0;
+}
+
+uint8_t MOS6502::ZeroPageY() {
+    return 0;
+}
+
+uint8_t MOS6502::Relative() {
+    return 0;
+}
+
+uint8_t MOS6502::Absolute() {
+    return 0;
+}
+
+uint8_t MOS6502::AbsoluteX() {
+    return 0;
+}
+
+uint8_t MOS6502::AbsoluteY() {
+    return 0;
+}
+
+uint8_t MOS6502::Indirect() {
+    return 0;
+}
+
+uint8_t MOS6502::IndexedIndirect() {
+    return 0;
+}
+
+uint8_t MOS6502::IndirectIndexed() {
+    return 0;
+}
+
+////////////////////////
+/// CPU Instructions ///
+////////////////////////
+
+uint8_t MOS6502::ADC() {
+    return 0;
+}
+
+uint8_t MOS6502::AND() {
+    return 0;
+}
+
+uint8_t MOS6502::ASL() {
+    return 0;
+}
+
+uint8_t MOS6502::BCC() {
+    return 0;
+}
+
+uint8_t MOS6502::BCS() {
+    return 0;
+}
+
+uint8_t MOS6502::BEQ() {
+    return 0;
+}
+
+uint8_t MOS6502::BIT() {
+    return 0;
+}
+
+uint8_t MOS6502::BMI() {
+    return 0;
+}
+
+uint8_t MOS6502::BNE() {
+    return 0;
+}
+
+uint8_t MOS6502::BPL() {
+    return 0;
+}
+
+uint8_t MOS6502::BRK() {
+    return 0;
+}
+
+uint8_t MOS6502::BVC() {
+    return 0;
+}
+
+uint8_t MOS6502::BVS() {
+    return 0;
+}
+
+uint8_t MOS6502::CLC() {
+    return 0;
+}
+
+uint8_t MOS6502::CLD() {
+    return 0;
+}
+
+uint8_t MOS6502::CLI() {
+    return 0;
+}
+
+uint8_t MOS6502::CLV() {
+    return 0;
+}
+
+uint8_t MOS6502::CMP() {
+    return 0;
+}
+
+uint8_t MOS6502::CPX() {
+    return 0;
+}
+
+uint8_t MOS6502::CPY() {
+    return 0;
+}
+
+uint8_t MOS6502::DEC() {
+    return 0;
+}
+
+uint8_t MOS6502::DEX() {
+    return 0;
+}
+
+uint8_t MOS6502::DEY() {
+    return 0;
+}
+
+uint8_t MOS6502::EOR() {
+    return 0;
+}
+
+uint8_t MOS6502::INC() {
+    return 0;
+}
+
+uint8_t MOS6502::INX() {
+    return 0;
+}
+
+uint8_t MOS6502::INY() {
+    return 0;
+}
+
+uint8_t MOS6502::JMP() {
+    return 0;
+}
+
+uint8_t MOS6502::JSR() {
+    return 0;
+}
+
+uint8_t MOS6502::LDA() {
+    return 0;
+}
+
+uint8_t MOS6502::LDX() {
+    return 0;
+}
+
+uint8_t MOS6502::LDY() {
+    return 0;
+}
+
+uint8_t MOS6502::LSR() {
+    return 0;
+}
+
+uint8_t MOS6502::NOP() {
+    return 0;
+}
+
+uint8_t MOS6502::ORA() {
+    return 0;
+}
+
+uint8_t MOS6502::PHA() {
+    return 0;
+}
+
+uint8_t MOS6502::PHP() {
+    return 0;
+}
+
+uint8_t MOS6502::PLA() {
+    return 0;
+}
+
+uint8_t MOS6502::PLP() {
+    return 0;
+}
+
+uint8_t MOS6502::ROL() {
+    return 0;
+}
+
+uint8_t MOS6502::ROR() {
+    return 0;
+}
+
+uint8_t MOS6502::RTI() {
+    return 0;
+}
+
+uint8_t MOS6502::RTS() {
+    return 0;
+}
+
+uint8_t MOS6502::SBC() {
+    return 0;
+}
+
+uint8_t MOS6502::SEC() {
+    return 0;
+}
+
+uint8_t MOS6502::SED() {
+    return 0;
+}
+
+uint8_t MOS6502::SEI() {
+    return 0;
+}
+
+uint8_t MOS6502::STA() {
+    return 0;
+}
+
+uint8_t MOS6502::STX() {
+    return 0;
+}
+
+uint8_t MOS6502::STY() {
+    return 0;
+}
+
+uint8_t MOS6502::TAX() {
+    return 0;
+}
+
+uint8_t MOS6502::TAY() {
+    return 0;
+}
+
+uint8_t MOS6502::TSX() {
+    return 0;
+}
+
+uint8_t MOS6502::TXA() {
+    return 0;
+}
+
+uint8_t MOS6502::TXS() {
+    return 0;
+}
+
+uint8_t MOS6502::TYA() {
+    return 0;
+}
+
+uint8_t MOS6502::BAD() {
+    return 0;
 }

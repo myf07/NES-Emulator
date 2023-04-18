@@ -62,17 +62,37 @@ Loader::~Loader() {
 }
 
 bool Loader::cpuWrite(uint16_t address, uint8_t data) {
+	uint32_t mappedAddress = 0;
+	if(mapperPtr->cpuWrite(address, mappedAddress)) {
+		prgMem[mappedAddress] = data;
+		return 1;
+	}
 	return 0;
 }
 
 bool Loader::cpuRead(uint16_t address, uint8_t & data) {
+	uint32_t mappedAddress = 0;
+	if(mapperPtr->cpuRead(address, mappedAddress)) {
+		data = prgMem[mappedAddress];
+		return 1;
+	}
 	return 0;
 }
 	
 bool Loader::ppuWrite(uint16_t address, uint8_t data) {
+	uint32_t mappedAddress = 0;
+	if(mapperPtr->ppuWrite(address, mappedAddress)) {
+		chrMem[mappedAddress] = data;
+		return 1;
+	}
 	return 0;
 }
 
 bool Loader::ppuRead(uint16_t address, uint8_t & data) {
+	uint32_t mappedAddress = 0;
+	if(mapperPtr->ppuRead(address, mappedAddress)) {
+		data = chrMem[mappedAddress];
+		return 1;
+	}
 	return 0;
 }

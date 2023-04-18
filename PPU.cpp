@@ -76,5 +76,41 @@ PPU::~PPU(){
 
 Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
     //palette << 2 to get to the right palette, pixel to select the right color
-    return Colors[ppuRead(0x3F00 + (palette << 2) + pixel)];
+    return Colors[PPURead(0x3F00 + (palette << 2) + pixel)];
+}
+
+uint8_t PPU::CPURead(uint16_t addr, bool rdonly = false) {
+	
+}
+
+void PPU::CPUWrite(uint16_t addr, uint8_t data) {
+
+}
+
+uint8_t PPU::PPURead(uint16_t addr, bool rdonly = false) {
+
+}
+
+void PPU::PPUWrite(uint16_t addr, uint8_t data) {
+
+}
+
+void PPU::CLK() {
+    
+    //enter the Non-maskable interrupt
+    if (Scanline = 241 && Cycle == 1){
+        Status.VerticalBlank = 1;
+        nmi = true & Control.EnableNMI;
+    }
+
+    //update cycle and scanline
+    Cycle++;
+    if(Cycle >= 341) {
+        Cycle = 0;
+        Scanline++;
+        if(Scanline >= 261) {
+            Scanline = -1;
+        }
+    }
+
 }

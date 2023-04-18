@@ -1,0 +1,9 @@
+{
+  "files.associations": {
+    "compare": "cpp",
+    "string": "cpp",
+    "string_view": "cpp",
+    "type_traits": "cpp",
+    "vector": "cpp"
+  }
+}

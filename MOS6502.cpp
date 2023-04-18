@@ -277,6 +277,23 @@ void MOS6502::Write(uint16_t addr, uint8_t data) {
     bus->Write(addr, data);
 }
 
+// Calls everytime a new cycle starts
+void MOS6502::CLK() {
+    // Next instruction starts when the previous instruction's cycle count is 0
+    if(cycles == 0) {
+        opcode = Read(PC);
+        cycles = lookup[opcode].cycles;
+
+        uint8_t const oops_cycle1 = (this->*lookup[opcode].AddrMode)();
+        uint8_t const oops_cycle2 = (this->*lookup[opcode].Operation)();
+
+        // Check if this instruction needs the "oops" cycle
+        if(oops_cycle1 && oops_cycle2)
+            ++cycles;
+    }
+    --cycles;
+}
+
 ////////////////////////
 /// Addressing Modes ///
 ////////////////////////

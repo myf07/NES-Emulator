@@ -269,12 +269,12 @@ MOS6502::~MOS6502() {
 
 // Wrapper for reading from bus
 uint8_t MOS6502::Read(uint16_t addr) {
-    return bus->Read(addr, false);
+    return bus->CPURead(addr, false);
 }
 
 // Wrapper for writing to bus
 void MOS6502::Write(uint16_t addr, uint8_t data) {
-    bus->Write(addr, data);
+    bus->CPUWrite(addr, data);
 }
 
 // Calls everytime a new cycle starts
@@ -282,8 +282,9 @@ void MOS6502::CLK() {
     // Next instruction starts when the previous instruction's cycle count is 0
     if(cycles == 0) {
         opcode = Read(PC);
-        cycles = lookup[opcode].cycles;
+        ++PC;
 
+        cycles = lookup[opcode].cycles;
         uint8_t const oops_cycle1 = (this->*lookup[opcode].AddrMode)();
         uint8_t const oops_cycle2 = (this->*lookup[opcode].Operation)();
 
@@ -294,72 +295,277 @@ void MOS6502::CLK() {
     --cycles;
 }
 
+// RST signal
+void MOS6502::RST() {
+    // A, X, Y are not affected
+    S -= 3;
+    SetFlag(PFLAGS::I, true);
+
+    // CPU starts executing code at 0xFFFC
+    uint16_t const restart_addr = 0xFFFC;
+    uint16_t const low_byte = Read(restart_addr);
+    uint16_t const high_byte = Read(restart_addr + 1);
+    PC = (high_byte << 8) | low_byte;
+
+    // Clean up custom data state
+    cycles = 8;
+    opcode = 0x00;
+    abs_addr = 0x0000;
+    rel_addr = 0x0000;
+    fetched_data = 0x00;
+}
+
+// Interrupt
+void MOS6502::IRQ() {
+    // If PFLAGS::I is set, then Interrupts are disabled
+    if(GetFlag(PFLAGS::I) == 1)
+        return;
+
+    // Push PC onto stack
+    Write(0x0100 + S, (uint8_t) ((PC & 0xFF00) >> 8));
+    --S;
+    Write(0x0100 + S, (uint8_t) (PC & 0x00FF));
+    --S;
+
+    // Push Status Register onto stack
+    SetFlag(PFLAGS::B, false);
+    SetFlag(PFLAGS::U, true);
+    SetFlag(PFLAGS::I, true);
+    Write(0x0100 + S, P);
+    --S;
+
+    // CPU starts executing code at 0xFFFE
+    uint16_t const restart_addr = 0xFFFE;
+    uint16_t const low_byte = Read(restart_addr);
+    uint16_t const high_byte = Read(restart_addr + 1);
+    PC = (high_byte << 8) | low_byte;
+
+    // Set cycle count
+    cycles = 7;
+}
+
+// Non-Maskable Interrupt
+void MOS6502::NMI() {
+    // PFLAGS::I does not affect Non-Maskable Interrupts
+
+    // Push PC onto stack
+    Write(0x0100 + S, (uint8_t) ((PC & 0xFF00) >> 8));
+    --S;
+    Write(0x0100 + S, (uint8_t) (PC & 0x00FF));
+    --S;
+
+    // Push Status Register onto stack
+    SetFlag(PFLAGS::B, false);
+    SetFlag(PFLAGS::U, true);
+    SetFlag(PFLAGS::I, true);
+    Write(0x0100 + S, P);
+    --S;
+
+    // CPU starts executing code at 0xFFFA
+    uint16_t const restart_addr = 0xFFFA;
+    uint16_t const low_byte = Read(restart_addr);
+    uint16_t const high_byte = Read(restart_addr + 1);
+    PC = (high_byte << 8) | low_byte;
+
+    // Set cycle count
+    cycles = 8;
+}
+
 ////////////////////////
 /// Addressing Modes ///
 ////////////////////////
 
 uint8_t MOS6502::Implicit() {
+    fetched_data = A;
     return 0;
 }
 
 uint8_t MOS6502::Accumulator() {
+    fetched_data = A;
     return 0;
 }
 
 uint8_t MOS6502::Immediate() {
+    abs_addr = PC++;
     return 0;
 }
 
 uint8_t MOS6502::ZeroPage() {
+    abs_addr = Read(PC);
+    ++PC;
+
+    // Make sure we are on the Zero Page
+    abs_addr &= 0x00FF;
     return 0;
 }
 
 uint8_t MOS6502::ZeroPageX() {
+    abs_addr = Read(PC) + X;
+    ++PC;
+
+    // Wrap to the Zero Page
+    abs_addr &= 0x00FF;
     return 0;
 }
 
 uint8_t MOS6502::ZeroPageY() {
+    abs_addr = Read(PC) + Y;
+    ++PC;
+
+    // Wrap to the Zero Page
+    abs_addr &= 0x00FF;
     return 0;
 }
 
 uint8_t MOS6502::Relative() {
+    rel_addr = Read(PC);
+    ++PC;
+
+    // If signed bit is set, then offset is negative
+    // In that case, we need to sign extend
+    if(rel_addr & 0b10000000)
+        rel_addr |= 0xFF00;
+
     return 0;
 }
 
 uint8_t MOS6502::Absolute() {
+    // Little Endian
+    uint16_t const low_byte = Read(PC);
+    ++PC;
+    uint16_t const high_byte = Read(PC);
+    ++PC;
+
+    // Combine to form the full 16-bit address
+    abs_addr = (high_byte << 8) | low_byte;
     return 0;
 }
 
 uint8_t MOS6502::AbsoluteX() {
+    // Little Endian
+    uint16_t const low_byte = Read(PC);
+    ++PC;
+    uint16_t const high_byte = Read(PC);
+    ++PC;
+
+    // Combine to form the full 16-bit address
+    abs_addr = (high_byte << 8) | low_byte;
+    abs_addr += X;
+
+    // Check if the "oops" cycle is needed
+    if((abs_addr & 0xFF00) != (high_byte << 8))
+        return 1;
+
     return 0;
 }
 
 uint8_t MOS6502::AbsoluteY() {
+    // Little Endian
+    uint16_t const low_byte = Read(PC);
+    ++PC;
+    uint16_t const high_byte = Read(PC);
+    ++PC;
+
+    // Combine to form the full 16-bit address
+    abs_addr = (high_byte << 8) | low_byte;
+    abs_addr += Y;
+
+    // Check if the "oops" cycle is needed
+    if((abs_addr & 0xFF00) != (high_byte << 8))
+        return 1;
+
     return 0;
 }
 
 uint8_t MOS6502::Indirect() {
+    uint16_t const low_addr = Read(PC);
+    ++PC;
+    uint16_t const high_addr = Read(PC);
+    ++PC;
+
+    uint16_t const read_addr = (high_addr << 8) | low_addr;
+
+    // There is a bug if the target address to read from falls on a page boundary
+    // E.g., $xxFF, most games caught this error and prevented reading from page boundaries
+    abs_addr = (Read(read_addr + 1) << 8) | Read(read_addr);
+
     return 0;
 }
 
 uint8_t MOS6502::IndexedIndirect() {
+    uint16_t const offset = Read(PC);
+    ++PC;
+
+    uint16_t const read_addr = offset + X;
+
+    uint16_t const low_addr = Read(read_addr & 0x00FF);
+    uint16_t const high_addr = Read((read_addr + 1) & 0x00FF);
+
+    abs_addr = (high_addr << 8) | low_addr;
+
     return 0;
 }
 
 uint8_t MOS6502::IndirectIndexed() {
+    uint16_t const offset = Read(PC);
+    ++PC;
+
+    uint16_t const low_addr = Read(offset & 0x00FF);
+    uint16_t const high_addr = Read((offset + 1) & 0x00FF);
+
+    abs_addr = ((high_addr << 8) | low_addr) + (uint16_t) Y;
+
+    // Check if the "oops" cycle is needed
+    if((abs_addr & 0xFF00) != (high_addr << 8))
+        return 1;
+
     return 0;
+}
+
+/////////////////////
+/// CPU Functions ///
+/////////////////////
+
+// Fetch data from address
+uint8_t MOS6502::fetch() {
+    if(lookup[opcode].AddrMode != &MOS6502::Implicit)
+        fetched_data = Read(abs_addr);
+    return fetched_data;
 }
 
 ////////////////////////
 /// CPU Instructions ///
 ////////////////////////
 
+// Add with Carry
 uint8_t MOS6502::ADC() {
-    return 0;
+    // Calculate result
+    fetch();
+    uint16_t const scratch = (uint16_t) A + (uint16_t) fetched_data + (uint16_t) GetFlag(PFLAGS::C);
+
+    // Set C, Z, and N flags
+    SetFlag(PFLAGS::C, scratch > 255);
+    SetFlag(PFLAGS::Z, (scratch & 0x00FF) == 0x0000);
+    SetFlag(PFLAGS::N, (scratch & 0x0080) == 0x0080);
+
+    // Setting the Overflow flag
+    bool const overflow1 = ((A & 0x80) == 0x00) && ((fetched_data & 0x80) == 0x00) && ((scratch & 0x0080) == 0x0080);
+    bool const overflow2 = ((A & 0x80) == 0x80) && ((fetched_data & 0x80) == 0x80) && ((scratch & 0x0080) == 0x0000);
+    SetFlag(PFLAGS::V, overflow1 || overflow2);
+
+    // Setting the actual result back into Accumulator
+    A = (scratch & 0x00FF);
+
+    return 1;
 }
 
+// Logical AND
 uint8_t MOS6502::AND() {
-    return 0;
+    fetch();
+    A &= fetched_data;
+    SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, A & 0x80);
+    return 1;
 }
 
 uint8_t MOS6502::ASL() {
@@ -370,11 +576,33 @@ uint8_t MOS6502::BCC() {
     return 0;
 }
 
+// Branch if Carry Set
 uint8_t MOS6502::BCS() {
+    if(GetFlag(PFLAGS::C) == 1) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
+// Branch if Equal
 uint8_t MOS6502::BEQ() {
+    if(GetFlag(PFLAGS::Z) == 1) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
@@ -382,15 +610,48 @@ uint8_t MOS6502::BIT() {
     return 0;
 }
 
+// Branch if Minus
 uint8_t MOS6502::BMI() {
+    if(GetFlag(PFLAGS::N) == 1) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
+// Branch if Not Equal
 uint8_t MOS6502::BNE() {
+    if(GetFlag(PFLAGS::Z) == 0) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
+// Branch if Positive
 uint8_t MOS6502::BPL() {
+    if(GetFlag(PFLAGS::N) == 0) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
@@ -398,27 +659,57 @@ uint8_t MOS6502::BRK() {
     return 0;
 }
 
+// Branch if Overflow Clear
 uint8_t MOS6502::BVC() {
+    if(GetFlag(PFLAGS::V) == 0) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
+// Branch if Overflow Set
 uint8_t MOS6502::BVS() {
+    if(GetFlag(PFLAGS::V) == 1) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
+// Clear Carry Flag
 uint8_t MOS6502::CLC() {
+    SetFlag(PFLAGS::C, false);
     return 0;
 }
 
+// Clear Decimal Mode
 uint8_t MOS6502::CLD() {
+    SetFlag(PFLAGS::D, false);
     return 0;
 }
 
+// Clear Interrupt Disable
 uint8_t MOS6502::CLI() {
+    SetFlag(PFLAGS::I, false);
     return 0;
 }
 
+// Clear Overflow Flag
 uint8_t MOS6502::CLV() {
+    SetFlag(PFLAGS::V, false);
     return 0;
 }
 
@@ -494,7 +785,10 @@ uint8_t MOS6502::ORA() {
     return 0;
 }
 
+// Push Accumulator
 uint8_t MOS6502::PHA() {
+    Write(0x0100 + S, A);
+    --S;
     return 0;
 }
 
@@ -502,7 +796,12 @@ uint8_t MOS6502::PHP() {
     return 0;
 }
 
+// Pull Accumulator
 uint8_t MOS6502::PLA() {
+    ++S;
+    A = Read(0x0100 + S);
+    SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, A & 0x80);
     return 0;
 }
 
@@ -518,7 +817,22 @@ uint8_t MOS6502::ROR() {
     return 0;
 }
 
+// Return from Interrupt
 uint8_t MOS6502::RTI() {
+    // Pull Status Register
+    ++S;
+    P = Read(0x0100 + S);
+    SetFlag(PFLAGS::B, false);
+    SetFlag(PFLAGS::U, false);
+
+    // Pull PC
+    ++S;
+    uint16_t const low_byte = Read(0x0100 + S);
+    ++S;
+    uint16_t const high_byte = Read(0x0100 + S);
+
+    PC = (high_byte << 8) | low_byte;
+
     return 0;
 }
 
@@ -526,8 +840,34 @@ uint8_t MOS6502::RTS() {
     return 0;
 }
 
+// Subtract with Carry
 uint8_t MOS6502::SBC() {
-    return 0;
+    // A = A - M - (1 - C)
+    // A = A - M - 1 + C
+    // A = A + (-M - 1) + C
+    // -M = ~M + 1    <--- Two's Complement
+    // -M - 1 = ~M
+    // A = A + (~M) + C
+    // A = A + (M ^ 0xFF) + C
+
+    // Calculate result
+    fetch();
+    uint16_t const scratch = (uint16_t) A + (uint16_t) (~fetched_data) + (uint16_t) GetFlag(PFLAGS::C);
+
+    // Set C, Z, and N flags
+    SetFlag(PFLAGS::C, scratch > 255);
+    SetFlag(PFLAGS::Z, (scratch & 0x00FF) == 0x0000);
+    SetFlag(PFLAGS::N, (scratch & 0x0080) == 0x0080);
+
+    // Setting the Overflow flag
+    bool const overflow1 = ((A & 0x80) == 0x00) && ((fetched_data & 0x80) == 0x00) && ((scratch & 0x0080) == 0x0080);
+    bool const overflow2 = ((A & 0x80) == 0x80) && ((fetched_data & 0x80) == 0x80) && ((scratch & 0x0080) == 0x0000);
+    SetFlag(PFLAGS::V, overflow1 || overflow2);
+
+    // Setting the actual result back into Accumulator
+    A = (scratch & 0x00FF);
+
+    return 1;
 }
 
 uint8_t MOS6502::SEC() {

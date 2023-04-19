@@ -8,34 +8,37 @@ using namespace std;
 
 class Loader {
 public:
-	// constructor and destructor
-	// takes in cartridge data stored in the file "fName"
-	Loader(const string& fName);
-	~Loader();
+    // constructor and destructor
+    // takes in cartridge data stored in the file "fName"
+    Loader(const string &fName);
 
-	// byte memory for program and characters
-	// variable depending on cartridge!
+    ~Loader();
 
-	uint8_t mapperID; // ID of mapper
-	uint8_t numPrgBanks; // number of program banks
-	uint8_t numChrBanks; // number of character banks
+    // byte memory for program and characters
+    // variable depending on cartridge!
 
-	vector<uint8_t> prgMem; // program memory
-	vector<uint8_t> chrMem; // caracter memory
+    uint8_t mapperID; // ID of mapper
+    uint8_t numPrgBanks; // number of program banks
+    uint8_t numChrBanks; // number of character banks
 
-	// pointer to correct mapper
-	Mapper * mapperPtr;
+    vector<uint8_t> prgMem; // program memory
+    vector<uint8_t> chrMem; // caracter memory
 
-	/*
-		For communication, returns true if the cartridge was read/written from
-		and false otherwise.
-	*/
-	
-	// communication with CPU
-	bool cpuWrite(uint16_t address, uint8_t data);
-	bool cpuRead(uint16_t address, uint8_t & data);
-	
-	// communication with PPU
-	bool ppuWrite(uint16_t address, uint8_t data);
-	bool ppuRead(uint16_t address, uint8_t & data);
+    // pointer to correct mapper
+    Mapper *mapperPtr;
+
+    /*
+        For communication, returns true if the cartridge was read/written from
+        and false otherwise.
+    */
+
+    // communication with CPU
+    bool cpuWrite(uint16_t address, uint8_t data);
+
+    bool cpuRead(uint16_t address, uint8_t &data);
+
+    // communication with PPU
+    bool ppuWrite(uint16_t address, uint8_t data);
+
+    bool ppuRead(uint16_t address, uint8_t &data);
 };

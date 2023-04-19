@@ -14,7 +14,6 @@ class PixelTable {
         Pixel* pixels;
 };
 
-
 class PPU {
     public:
         PPU();
@@ -32,6 +31,9 @@ class PPU {
         void DisplayPixelNameTable(uint8_t table);
         // void DisplaySprite(uint8_t sprite, uint8_t palette, uint16_t x, uint16_t y);
         // PixelTable& GetPixelPatternTable(uint8_t table, uint8_t palette);
+        uint8_t     Patterns[2][4096];
+        uint8_t		Palettes[32];
+        Pixel       Colors[0x40];
         Pixel&      GetColorFromPalette(uint8_t palette, uint8_t pixel);
 
     public:
@@ -43,7 +45,6 @@ class PPU {
         uint8_t     PPURead(uint16_t addr, bool rdonly = false);
         void        PPUWrite(uint16_t addr, uint8_t data);
 
-    private:
         int16_t Scanline = 0;
         int16_t Cycle = 0;
 
@@ -87,7 +88,7 @@ class PPU {
             };
             uint8_t Reg;
         } Control;
-        
+
         union LoopyRegister { //a register created by loopy that stores the current state of the rendering
             struct {
                 uint16_t CoarseX : 5;
@@ -117,7 +118,6 @@ class PPU {
         uint8_t* _OAM = (uint8_t*) OAM;
 
         std::shared_ptr<Loader> Cartridge;
-
 
     public:
         void CLK();

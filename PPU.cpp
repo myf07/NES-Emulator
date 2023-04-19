@@ -1,4 +1,6 @@
+
 #include <cstdint>
+#include "Loader.h"
 #include "PPU.h"
 #include "PixelEngine.h"
 
@@ -9,7 +11,7 @@ PPU::PPU(){
 	PixelPatternTable[0] = PixelTable(256, 240);
 	PixelPatternTable[1] = PixelTable(256, 240);
 
-    Colors[0x00] = Pixel{84, 84, 84};
+  Colors[0x00] = Pixel{84, 84, 84};
 	Colors[0x01] = Pixel{0, 30, 116};
 	Colors[0x02] = Pixel{8, 16, 144};
 	Colors[0x03] = Pixel{48, 0, 136};
@@ -76,9 +78,6 @@ PPU::PPU(){
 	Colors[0x3D] = Pixel{160, 162, 160};
 	Colors[0x3E] = Pixel{0, 0, 0};
 	Colors[0x3F] = Pixel{0, 0, 0};
-
-	
-
 }
 
 PPU::~PPU(){
@@ -89,6 +88,7 @@ Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
     //palette << 2 to get to the right palette, pixel to select the right color
     return Colors[PPURead(0x3F00 + (palette << 2) + pixel)];
 }
+
 
 void PPU::DisplayPixelNameTable(uint8_t table) {
 
@@ -260,15 +260,14 @@ void PPU::CLK() {
     //stuff that is actually seen - do rendering
     //use -1 to configure first visible scanline
     if(Scanline >= -1 && Scanline < 240) {
-		DisplayPixelNameTable(0);
+		  DisplayPixelNameTable(0);
     }
     
-    //enter the Non-maskable interrupt, start 
-    if (Scanline = 241 && Cycle == 1) {
+    //enter the Non-maskable interrupt
+    if (Scanline = 241 && Cycle == 1){
         Status.VerticalBlank = 1;
         nmi = true & Control.EnableNMI;
     }
-
     //In the vertical blank, maybe NMI
     if (Scanline >= 241 && Scanline < 261) {
 

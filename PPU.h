@@ -1,8 +1,17 @@
 #include <cstdint>
+#include "PixelEngine.h"
+#include "main.h"
 #include "Loader.h"
 
 struct Pixel {
     uint8_t r, b, g;
+};
+
+class PixelTable {
+    public:
+        void setPixel(int32_t x, int32_t y, Pixel pixel);
+    private:
+        Pixel* pixels;
 };
 
 class PPU {
@@ -12,11 +21,19 @@ class PPU {
 
     private:		
         uint8_t     NameTable[2][1024];
+        uint8_t     Patterns[2][4096];//16 x 32
+        uint8_t		Palettes[32];
+        Pixel       Colors[0x40];
+        PixelTable  PixelNameTable[2];
+        PixelTable  PixelPatternTable[2];
+    
+    public:
+        void DisplayPixelNameTable(uint8_t table);
+        // void DisplaySprite(uint8_t sprite, uint8_t palette, uint16_t x, uint16_t y);
+        // PixelTable& GetPixelPatternTable(uint8_t table, uint8_t palette);
         uint8_t     Patterns[2][4096];
         uint8_t		Palettes[32];
         Pixel       Colors[0x40];
-    
-    public:
         Pixel&      GetColorFromPalette(uint8_t palette, uint8_t pixel);
 
     public:
@@ -28,7 +45,6 @@ class PPU {
         uint8_t     PPURead(uint16_t addr, bool rdonly = false);
         void        PPUWrite(uint16_t addr, uint8_t data);
 
-    public:
         int16_t Scanline = 0;
         int16_t Cycle = 0;
 
@@ -104,7 +120,8 @@ class PPU {
         std::shared_ptr<Loader> Cartridge;
 
     public:
-        void        CLK();
-        bool        nmi = false;
+        void CLK();
+        bool nmi = false;
         void ConnectCartridge(const std::shared_ptr<Loader>& cartridge);
 };
+

@@ -1,8 +1,17 @@
-#include "PPU.h"
+
+#include <cstdint>
 #include "Loader.h"
+#include "PPU.h"
+#include "PixelEngine.h"
 
 PPU::PPU(){
-    Colors[0x00] = Pixel{84, 84, 84};
+
+	PixelNameTable[0] = PixelTable(128, 128);
+	PixelNameTable[1] = PixelTable(128, 128);
+	PixelPatternTable[0] = PixelTable(256, 240);
+	PixelPatternTable[1] = PixelTable(256, 240);
+
+  Colors[0x00] = Pixel{84, 84, 84};
 	Colors[0x01] = Pixel{0, 30, 116};
 	Colors[0x02] = Pixel{8, 16, 144};
 	Colors[0x03] = Pixel{48, 0, 136};
@@ -78,6 +87,47 @@ PPU::~PPU(){
 Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
     //palette << 2 to get to the right palette, pixel to select the right color
     return Colors[PPURead(0x3F00 + (palette << 2) + pixel)];
+}
+
+
+void PPU::DisplayPixelNameTable(uint8_t table) {
+
+	for(uint8_t nameTableRow = 0; nameTableRow < 30; nameTableRow++) {
+		for(uint8_t nameTableCol = 0; nameTableCol < 32; nameTableCol++) {
+			// metadata found in bottom two rows of name table
+			uint16_t metaIndex = (nameTableRow / 4) * 8 + (nameTableCol / 4);
+			uint16_t metaRow = 30 + metaIndex / 32;
+			uint16_t metaCol = metaIndex % 32;
+
+			//3, 2
+			//1, 0
+			uint8_t squareIndex = 2 * (nameTableRow % 2) + (nameTableCol % 2);
+
+			//which palette we are using
+			uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
+
+			uint8_t spriteIdx = 16*NameTable[nameTableRow][nameTableCol];
+
+			uint8_t combinedPaletteColor[8][8];
+			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
+				uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
+				uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
+				for(uint8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
+					// THIS MIGHT BE WRONG :) --------------------------------------------------
+					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
+					combinedPaletteColor[combinedIdxRow][combinedIdxCol] = color;
+					lsb >>= 1;
+					msb >>= 1;
+
+					uint16_t outputRow = nameTableRow * 8 + combinedIdxRow;
+					uint16_t outputCol = nameTableCol * 8 + combinedIdxCol;		
+
+					Pixel p = GetColorFromPalette(palette, color);
+					DisplayPixel(outputCol, outputRow, p.r, p.g, p.b);
+				}
+			}
+		}
+	} 
 }
 
 uint8_t PPU::CPURead(uint16_t addr, bool rdonly = false) {
@@ -206,11 +256,21 @@ void PPU::ConnectCartridge(const std::shared_ptr<Loader>& cartridge) {
 }
 
 void PPU::CLK() {
+
+    //stuff that is actually seen - do rendering
+    //use -1 to configure first visible scanline
+    if(Scanline >= -1 && Scanline < 240) {
+		  DisplayPixelNameTable(0);
+    }
     
     //enter the Non-maskable interrupt
     if (Scanline = 241 && Cycle == 1){
         Status.VerticalBlank = 1;
         nmi = true & Control.EnableNMI;
+    }
+    //In the vertical blank, maybe NMI
+    if (Scanline >= 241 && Scanline < 261) {
+
     }
 
     //update cycle and scanline
@@ -222,5 +282,4 @@ void PPU::CLK() {
             Scanline = -1;
         }
     }
-
 }

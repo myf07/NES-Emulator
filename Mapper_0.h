@@ -13,4 +13,6 @@ public:
     bool ppuWrite(uint16_t addr, uint32_t &mAddr) override;
 
     bool ppuRead(uint16_t addr, uint32_t &mAddr) override;
+
+    void reset() override;
 };

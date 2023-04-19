@@ -1,6 +1,5 @@
 
 #include <cstdint>
-#include "Loader.h"
 #include "PPU.h"
 #include "PixelEngine.h"
 
@@ -11,7 +10,7 @@ PPU::PPU(){
 	PixelPatternTable[0] = PixelTable(256, 240);
 	PixelPatternTable[1] = PixelTable(256, 240);
 
-  Colors[0x00] = Pixel{84, 84, 84};
+  	Colors[0x00] = Pixel{84, 84, 84};
 	Colors[0x01] = Pixel{0, 30, 116};
 	Colors[0x02] = Pixel{8, 16, 144};
 	Colors[0x03] = Pixel{48, 0, 136};
@@ -216,8 +215,9 @@ void PPU::CPUWrite(uint16_t addr, uint8_t data) {
 uint8_t PPU::PPURead(uint16_t addr, bool rdonly = false) {
     uint8_t data = 0x00;
     addr &= 0x3FFF; //only want last 14 bits
-    Cartridge->ppuWrite(addr, data);
-    if(addr >= 0x0000 && addr <= 0x1FFF) {
+    if(cartridge->ppuRead(addr, data)) { // intercepted by Loader
+		// Loader handled PPU read, do nothing
+	} else if(addr >= 0x0000 && addr <= 0x1FFF) {
         data = Patterns[(addr & 0x1000) > 0][addr & 0x0FFF];
     } else if(addr >= 0x2000 && addr <= 0x3EFF) {
         addr &= 0x0FFF;
@@ -235,8 +235,9 @@ uint8_t PPU::PPURead(uint16_t addr, bool rdonly = false) {
 
 void PPU::PPUWrite(uint16_t addr, uint8_t data) {
     addr &= 0x3FFF;
-    Cartridge->ppuWrite(addr, data);
-    if(addr >= 0x0000 & addr <= 0x1FFF) {
+    if(cartridge->ppuWrite(addr, data)) { // intercepted by Loader
+		// Loader handled PPU write, do nothing
+	} else if(addr >= 0x0000 & addr <= 0x1FFF) {
         Patterns[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
     } else if(addr >= 0x2000 && addr <= 0x3EFF) {
         addr &= 0x0FFF;
@@ -251,8 +252,8 @@ void PPU::PPUWrite(uint16_t addr, uint8_t data) {
 	}
 }
 
-void PPU::ConnectCartridge(const std::shared_ptr<Loader>& cartridge) {
-    this->Cartridge = cartridge;
+void PPU::ConnectCartridge(std::shared_ptr<Loader>& loader) {
+    this->cartridge = loader;
 }
 
 void PPU::CLK() {

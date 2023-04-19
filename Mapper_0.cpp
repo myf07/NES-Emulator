@@ -19,3 +19,8 @@ bool Mapper0::ppuRead(uint16_t addr, uint32_t &mAddr) {
 bool Mapper0::ppuWrite(uint16_t addr, uint32_t &mAddr) {
     return 0;
 }
+
+// reset
+void Mapper0::reset() {
+
+}

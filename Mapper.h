@@ -21,4 +21,7 @@ public:
     virtual bool ppuWrite(uint16_t addr, uint32_t &mAddr) = 0;
 
     virtual bool ppuRead(uint16_t addr, uint32_t &mAddr) = 0;
+
+    // reset
+    virtual void reset() = 0;
 };

@@ -1,6 +1,10 @@
 #include <iostream>
-#include <SDL.h>
+#include <memory>
+
+#include "Bus.h"
+#include "Loader.h"
 #include "main.h"
+#include <SDL.h>
 
 // SDL Graphics Code
 SDL_Window * window;
@@ -13,7 +17,6 @@ int resH = 240;
 void DisplayPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b) {
     pixels[x + y * resW] = SDL_MapRGB(window_surface->format, r, g, b);
 }
-
 
 int main() {
 
@@ -43,9 +46,11 @@ int main() {
     printf("Pixel format: %s\n",
         SDL_GetPixelFormatName(window_surface->format->format));
 
-    // initiaize circuit
+    // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
-    // TBI -------------------------------------------------------------------------------------
+    Bus nesBus;
+    std::shared_ptr<Loader> loader = std::make_shared<Loader>("DonkeyKong.nes"); // make cartridge 
+    nesBus.InsertCartridge(loader);
 
     // call the clock 
     while (1)

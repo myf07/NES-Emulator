@@ -2,18 +2,19 @@
 #include <memory>
 #include "Loader.h"
 #include "main.h"
-#include "PixelEngine.h"
 
 struct Pixel {
     uint8_t r, b, g;
 };
 
+/*
 class PixelTable {
     public:
         void setPixel(int32_t x, int32_t y, Pixel pixel);
     private:
         Pixel* pixels;
 };
+*/
 
 class PPU {
     public:
@@ -25,17 +26,13 @@ class PPU {
         uint8_t     Patterns[2][4096];//16 x 32
         uint8_t		Palettes[32];
         Pixel       Colors[0x40];
+        /*
         PixelTable  PixelNameTable[2];
         PixelTable  PixelPatternTable[2];
-    
-    public:
+        */
+
         void DisplayPixelNameTable(uint8_t table);
-        // void DisplaySprite(uint8_t sprite, uint8_t palette, uint16_t x, uint16_t y);
-        // PixelTable& GetPixelPatternTable(uint8_t table, uint8_t palette);
-        uint8_t     Patterns[2][4096];
-        uint8_t		Palettes[32];
-        Pixel       Colors[0x40];
-        Pixel&      GetColorFromPalette(uint8_t palette, uint8_t pixel);
+        Pixel & GetColorFromPalette(uint8_t palette, uint8_t pixel);
 
     public:
         // Communications with Main Bus

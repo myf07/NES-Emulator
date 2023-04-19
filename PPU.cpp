@@ -1,14 +1,8 @@
 
 #include <cstdint>
 #include "PPU.h"
-#include "PixelEngine.h"
 
 PPU::PPU(){
-
-	PixelNameTable[0] = PixelTable(128, 128);
-	PixelNameTable[1] = PixelTable(128, 128);
-	PixelPatternTable[0] = PixelTable(256, 240);
-	PixelPatternTable[1] = PixelTable(256, 240);
 
   	Colors[0x00] = Pixel{84, 84, 84};
 	Colors[0x01] = Pixel{0, 30, 116};

@@ -1,8 +1,6 @@
 #include "Loader.h"
 #include <fstream>
 
-using namespace std;
-
 // iNES header format
 typedef struct DataHeader {
     char name[4];
@@ -19,8 +17,8 @@ typedef struct DataHeader {
 Loader::Loader(const std::string &fName) {
     DataHeader header; // struct for data header
 
-    ifstream in;
-    in.open(fName, ifstream::binary);
+    std::ifstream in;
+    in.open(fName, std::ifstream::binary);
     if (in.is_open()) {
         // store cartridge data header in header struct
         in.read((char *) &header, sizeof(DataHeader));
@@ -95,4 +93,10 @@ bool Loader::ppuRead(uint16_t address, uint8_t &data) {
         return 1;
     }
     return 0;
+}
+
+void Loader::RST() {
+    if(mapperPtr != 0) {
+        mapperPtr->reset();
+    }
 }

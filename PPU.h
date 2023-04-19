@@ -1,7 +1,8 @@
 #include <cstdint>
-#include "PixelEngine.h"
-#include "main.h"
+#include <memory>
 #include "Loader.h"
+#include "main.h"
+#include "PixelEngine.h"
 
 struct Pixel {
     uint8_t r, b, g;
@@ -117,11 +118,11 @@ class PPU {
         uint8_t OAMAddr = 0x00;
         uint8_t* _OAM = (uint8_t*) OAM;
 
-        std::shared_ptr<Loader> Cartridge;
+        std::shared_ptr<Loader> cartridge;
 
     public:
         void CLK();
         bool nmi = false;
-        void ConnectCartridge(const std::shared_ptr<Loader>& cartridge);
+        void ConnectCartridge(std::shared_ptr<Loader>& loader);
 };
 

@@ -1,5 +1,6 @@
-#include <cstdint>
 #include <array>
+#include <cstdint>
+#include <memory>
 #include "MOS6502.h"
 #include "Loader.h"
 #include "PPU.h"
@@ -9,10 +10,10 @@ public: // Devices connected to bus
     MOS6502 cpu;
 
     // RAM: 64 KiB
-    std::array<uint8_t, 64 * 1024> RAM;
+    std::array<uint8_t, 2048> CPURAM;
 
     //cartridge
-    std::shared_ptr<Loader> Cartridge;
+    std::shared_ptr<Loader> cartridge;
 
     //PPU
     PPU PPU;
@@ -26,7 +27,7 @@ public: // Constructor and destructor
 public: // functions
     uint8_t CPURead(uint16_t addr, bool bReadOnly = false);
     void CPUWrite(uint16_t addr, uint8_t data);
-    void InsertCartridge(const std::shared_ptr<Loader>& cartridge);
+    void InsertCartridge(std::shared_ptr<Loader>& loader);
     void RST();
     void CLK();
 

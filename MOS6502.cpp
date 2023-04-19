@@ -573,6 +573,16 @@ uint8_t MOS6502::ASL() {
 }
 
 uint8_t MOS6502::BCC() {
+    if(GetFlag(PFLAGS::C) == 0) {
+        ++cycles;
+        abs_addr = PC + rel_addr;
+
+        // Check if the "oops" cycle is needed
+        if((abs_addr & 0xFF00) != (PC & 0xFF00))
+            ++cycles;
+
+        PC = abs_addr;
+    }
     return 0;
 }
 
@@ -607,6 +617,10 @@ uint8_t MOS6502::BEQ() {
 }
 
 uint8_t MOS6502::BIT() {
+    fetch();
+    SetFlag(PFLAGS::Z, (fetched_data & A & 0x00FF) == 0);
+    SetFlag(PFLAGS::N, ((fetched_data & A) & (1 << 7)) > 0);
+    SetFlag(PFLAGS::V, ((fetched_data & A) & (1 << 6)) > 0);
     return 0;
 }
 
@@ -718,10 +732,20 @@ uint8_t MOS6502::CMP() {
 }
 
 uint8_t MOS6502::CPX() {
+    fetch();
+    uint16_t res = (uint16_t) X - (uint16_t) fetched_data;
+    SetFlag(PFLAGS::C, X >= fetched_data);
+    SetFlag(PFLAGS::Z, (res & 0x00FF) == 0);
+    SetFlag(PFLAGS::N, (res & (1 << 7)) > 0);
     return 0;
 }
 
 uint8_t MOS6502::CPY() {
+    fetch();
+    uint16_t res = (uint16_t) Y - (uint16_t) fetched_data;
+    SetFlag(PFLAGS::C, Y >= fetched_data);
+    SetFlag(PFLAGS::Z, (res & 0x00FF) == 0);
+    SetFlag(PFLAGS::N, (res & (1 << 7)) > 0);
     return 0;
 }
 
@@ -734,6 +758,9 @@ uint8_t MOS6502::DEX() {
 }
 
 uint8_t MOS6502::DEY() {
+    Y--;
+    SetFlag(PFLAGS::Z, Y == 0);
+    SetFlag(PFLAGS::N, (Y & (1 << 7)) == 1);
     return 0;
 }
 
@@ -746,18 +773,31 @@ uint8_t MOS6502::INC() {
 }
 
 uint8_t MOS6502::INX() {
+    X++;
+    SetFlag(PFLAGS::Z, X == 0);
+    SetFlag(PFLAGS::N, (X & (1 << 7)) > 0);
     return 0;
 }
 
 uint8_t MOS6502::INY() {
+    Y++;
+    SetFlag(PFLAGS::Z, Y == 0);
+    SetFlag(PFLAGS::N, (Y & (1 << 7)) > 0);
     return 0;
 }
 
 uint8_t MOS6502::JMP() {
+    PC = abs_addr;
     return 0;
 }
 
 uint8_t MOS6502::JSR() {
+    fetch();
+    Write(0x0100 + S, (uint8_t) (((PC - 1) >> 8) & 0x00FF));
+    --S;
+    Write(0x0100 + S, (uint8_t) (PC & 0x00FF));
+    --S;
+    PC = abs_addr;
     return 0;
 }
 
@@ -770,7 +810,11 @@ uint8_t MOS6502::LDX() {
 }
 
 uint8_t MOS6502::LDY() {
-    return 0;
+    fetch();
+    Y = fetched_data;
+    SetFlag(PFLAGS::Z, Y == 0);
+    SetFlag(PFLAGS::N, (Y & (1 << 7)) > 0);
+    return 1;
 }
 
 uint8_t MOS6502::LSR() {
@@ -793,6 +837,8 @@ uint8_t MOS6502::PHA() {
 }
 
 uint8_t MOS6502::PHP() {
+    Write(0x0100 + S, P);
+    --S;
     return 0;
 }
 
@@ -806,6 +852,8 @@ uint8_t MOS6502::PLA() {
 }
 
 uint8_t MOS6502::PLP() {
+    ++S;
+    P = Read(0x0100 + S);
     return 0;
 }
 
@@ -871,14 +919,17 @@ uint8_t MOS6502::SBC() {
 }
 
 uint8_t MOS6502::SEC() {
+    SetFlag(PFLAGS::C, 1);
     return 0;
 }
 
 uint8_t MOS6502::SED() {
+    SetFlag(PFLAGS::D, 1);
     return 0;
 }
 
 uint8_t MOS6502::SEI() {
+    SetFlag(PFLAGS::I, 0);
     return 0;
 }
 
@@ -891,6 +942,7 @@ uint8_t MOS6502::STX() {
 }
 
 uint8_t MOS6502::STY() {
+    Write(abs_addr, Y);
     return 0;
 }
 
@@ -899,6 +951,9 @@ uint8_t MOS6502::TAX() {
 }
 
 uint8_t MOS6502::TAY() {
+    Y = A;
+    SetFlag(PFLAGS::Z, Y == 0);
+    SetFlag(PFLAGS::N, (Y & (1 << 7)) > 0);
     return 0;
 }
 
@@ -915,6 +970,9 @@ uint8_t MOS6502::TXS() {
 }
 
 uint8_t MOS6502::TYA() {
+    A = Y;
+    SetFlag(PFLAGS::Z, A == 0);
+    SetFlag(PFLAGS::N, (A & (1 << 7)) > 0);
     return 0;
 }
 

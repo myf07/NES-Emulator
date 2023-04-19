@@ -678,7 +678,27 @@ uint8_t MOS6502::BPL() {
     return 0;
 }
 
+// Force Interrupt
 uint8_t MOS6502::BRK() {
+    // Push PC onto stack
+    ++PC;
+    Write(0x0100 + S, (uint8_t) ((PC & 0xFF00) >> 8));
+    --S;
+    Write(0x0100 + S, (uint8_t) (PC & 0x00FF));
+    --S;
+
+    // Push Status Register onto stack
+    SetFlag(PFLAGS::B, true);
+    Write(0x0100 + S, P);
+    --S;
+    SetFlag(PFLAGS::B, false);
+
+    // CPU starts executing code at 0xFFFE
+    uint16_t const restart_addr = 0xFFFE;
+    uint16_t const low_byte = Read(restart_addr);
+    uint16_t const high_byte = Read(restart_addr + 1);
+    PC = (high_byte << 8) | low_byte;
+
     return 0;
 }
 
@@ -960,7 +980,15 @@ uint8_t MOS6502::RTI() {
     return 0;
 }
 
+// Return from Subroutine
 uint8_t MOS6502::RTS() {
+    ++S;
+    uint16_t const low_byte= Read(0x0100 + S);
+    ++S;
+    uint16_t const high_byte = Read(0x0100 + S);
+
+    PC = (high_byte << 8) | low_byte;
+
     return 0;
 }
 

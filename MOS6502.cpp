@@ -723,7 +723,13 @@ uint8_t MOS6502::CLV() {
 }
 
 uint8_t MOS6502::CMP() {
-    return 0;
+    fetch();
+    uint8_t memVal = (uint8_t)(fetched_data&0x00FF);
+    uint16_t diff = ((uint16_t)A) - fetched_data;
+    SetFlag(PFLAGS::C, A >= memVal);
+    SetFlag(PFLAGS::C, diff == 0);
+    SetFlag(PFLAGS::N, (diff & 0x0080) == 0x0080);
+    return 1;
 }
 
 uint8_t MOS6502::CPX() {
@@ -755,7 +761,11 @@ uint8_t MOS6502::DEY() {
 }
 
 uint8_t MOS6502::EOR() {
-    return 0;
+    fetch();
+    A = A ^ ((uint8_t)(fetched_data & 0x00FF));
+    SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, (A & 0x80) == 0x80);
+    return 1;
 }
 
 uint8_t MOS6502::INC() {
@@ -784,7 +794,11 @@ uint8_t MOS6502::JSR() {
 }
 
 uint8_t MOS6502::LDA() {
-    return 0;
+    fetch();
+    A = (uint8_t)(fetched_data & 0x00FF);
+    SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, (A & 0x80) == 0x80);
+    return 1;
 }
 
 uint8_t MOS6502::LDX() {
@@ -819,7 +833,11 @@ uint8_t MOS6502::NOP() {
 }
 
 uint8_t MOS6502::ORA() {
-    return 0;
+    fetch();
+    A = A | ((uint8_t)(fetched_data & 0x00FF));
+    SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, (A & 0x80) == 0x80);
+    return 1;
 }
 
 // Push Accumulator
@@ -941,6 +959,7 @@ uint8_t MOS6502::SEI() {
 }
 
 uint8_t MOS6502::STA() {
+    Write(abs_addr, A);
     return 0;
 }
 

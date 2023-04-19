@@ -1,6 +1,14 @@
+#include <cstdint>
 #include "PPU.h"
+#include "PixelEngine.h"
 
 PPU::PPU(){
+
+	PixelNameTable[0] = PixelTable(128, 128);
+	PixelNameTable[1] = PixelTable(128, 128);
+	PixelPatternTable[0] = PixelTable(256, 240);
+	PixelPatternTable[1] = PixelTable(256, 240);
+
     Colors[0x00] = Pixel{84, 84, 84};
 	Colors[0x01] = Pixel{0, 30, 116};
 	Colors[0x02] = Pixel{8, 16, 144};
@@ -68,6 +76,9 @@ PPU::PPU(){
 	Colors[0x3D] = Pixel{160, 162, 160};
 	Colors[0x3E] = Pixel{0, 0, 0};
 	Colors[0x3F] = Pixel{0, 0, 0};
+
+	
+
 }
 
 PPU::~PPU(){
@@ -79,28 +90,188 @@ Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
     return Colors[PPURead(0x3F00 + (palette << 2) + pixel)];
 }
 
+void PPU::DisplayPixelNameTable(uint8_t table) {
+
+	for(uint8_t nameTableRow = 0; nameTableRow < 30; nameTableRow++) {
+		for(uint8_t nameTableCol = 0; nameTableCol < 32; nameTableCol++) {
+			// metadata found in bottom two rows of name table
+			uint16_t metaIndex = (nameTableRow / 4) * 8 + (nameTableCol / 4);
+			uint16_t metaRow = 30 + metaIndex / 32;
+			uint16_t metaCol = metaIndex % 32;
+
+			//3, 2
+			//1, 0
+			uint8_t squareIndex = 2 * (nameTableRow % 2) + (nameTableCol % 2);
+
+			//which palette we are using
+			uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
+
+			uint8_t spriteIdx = 16*NameTable[nameTableRow][nameTableCol];
+
+			uint8_t combinedPaletteColor[8][8];
+			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
+				uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
+				uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
+				for(uint8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
+					// THIS MIGHT BE WRONG :) --------------------------------------------------
+					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
+					combinedPaletteColor[combinedIdxRow][combinedIdxCol] = color;
+					lsb >>= 1;
+					msb >>= 1;
+
+					uint16_t outputRow = nameTableRow * 8 + combinedIdxRow;
+					uint16_t outputCol = nameTableCol * 8 + combinedIdxCol;		
+
+					Pixel p = GetColorFromPalette(palette, color);
+					DisplayPixel(outputCol, outputRow, p.r, p.g, p.b);
+				}
+			}
+		}
+	} 
+}
+
 uint8_t PPU::CPURead(uint16_t addr, bool rdonly = false) {
-	
+	uint8_t data = 0x00; //data we return
+	switch(addr) {
+		//Control register
+		case 0x0000: break;
+		//Mask register
+		case 0x0001: break;
+		//Status register
+		case 0x0002:
+			//reading from status resets these bits
+			Status.VerticalBlank = 0;
+			AddressLatch = 0;
+			//we only care about the top 3 bits
+			data = Status.Reg & 0xE0;
+			break;
+		//oam address
+		case 0x0003: break;
+		//oam data
+		case 0x0004: 
+			data = _OAM[OAMAddr];
+			break;
+		//scroll
+		case 0x0005: break;
+		//ppu address
+		case 0x0006: break;
+		//ppu data
+		case 0x0007:
+			data = PPUDataBuffer;
+			//reading data is delayed by 1 cycle
+			PPUDataBuffer = PPURead(VRAMAddr.Reg);
+			if(VRAMAddr.Reg >= 0x3F00) { //don't delay by 1 cycle if a palette address
+				data = PPUDataBuffer;
+			}
+			//all reads increment nametable address
+			VRAMAddr.Reg += (Control.IncrementMode ? 32 : 1);
+			break;
+	}
+	return data;
 }
 
 void PPU::CPUWrite(uint16_t addr, uint8_t data) {
-
+	switch(addr) {
+		//Control
+		case 0x0000: 
+			//update control register and set update TRAM nametables
+			Control.Reg = data;
+			TRAMAddr.NametableX = Control.NametableX;
+			TRAMAddr.NametableY = Control.NametableY;
+			break;
+		//Mask
+		case 0x0001:
+			Mask.Reg = data;
+			break;
+		case 0x0002: break;
+		//OAM address
+		case 0x0003: 
+			OAMAddr = data;
+			break;
+		//OAM data
+		case 0x0004:
+			_OAM[OAMAddr] = data;
+			break;
+		//scroll - not needed for no scroll games like Donkey Kong
+		//TODO
+		case 0x0005: break;
+		//PPU address
+		case 0x0006: 
+			if(AddressLatch == 0) {
+				TRAMAddr.Reg = (uint16_t) ((data & 0x3F) << 8) | (TRAMAddr.Reg & 0x00FF);
+			} else {
+				TRAMAddr.Reg = (TRAMAddr.Reg & 0x00FF) | data;
+				VRAMAddr = TRAMAddr;
+			}
+			AddressLatch = !AddressLatch;
+			break;
+		case 0x0007:
+			PPUWrite(VRAMAddr.Reg, data);
+			//all writes increment the nametable address
+			VRAMAddr.Reg += (Control.IncrementMode ? 32 : 1);
+			break;
+	}
 }
 
 uint8_t PPU::PPURead(uint16_t addr, bool rdonly = false) {
-
+    uint8_t data = 0x00;
+    addr &= 0x3FFF; //only want last 14 bits
+    Cartridge->ppuWrite(addr, data);
+    if(addr >= 0x0000 && addr <= 0x1FFF) {
+        data = Patterns[(addr & 0x1000) > 0][addr & 0x0FFF];
+    } else if(addr >= 0x2000 && addr <= 0x3EFF) {
+        addr &= 0x0FFF;
+        //TODO: mirror stuff
+    } else if(addr >= 0x3F00 && addr <= 0x3FFF) {
+        addr &= 0x001F;
+        if (addr == 0x0010) addr = 0x0000;
+		if (addr == 0x0014) addr = 0x0004;
+		if (addr == 0x0018) addr = 0x0008;
+		if (addr == 0x001C) addr = 0x000C;
+		data = Palettes[addr] & (Mask.Grayscale ? 0x30 : 0x3F);
+    }
+    return data;
 }
 
 void PPU::PPUWrite(uint16_t addr, uint8_t data) {
+    addr &= 0x3FFF;
+    Cartridge->ppuWrite(addr, data);
+    if(addr >= 0x0000 & addr <= 0x1FFF) {
+        Patterns[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
+    } else if(addr >= 0x2000 && addr <= 0x3EFF) {
+        addr &= 0x0FFF;
+        //TODO: mirror stuff
+    } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
+		addr &= 0x001F;
+		if (addr == 0x0010) addr = 0x0000;
+		if (addr == 0x0014) addr = 0x0004;
+		if (addr == 0x0018) addr = 0x0008;
+		if (addr == 0x001C) addr = 0x000C;
+		Palettes[addr] = data;
+	}
+}
 
+void PPU::ConnectCartridge(const std::shared_ptr<Loader>& cartridge) {
+    this->Cartridge = cartridge;
 }
 
 void PPU::CLK() {
+
+    //stuff that is actually seen - do rendering
+    //use -1 to configure first visible scanline
+    if(Scanline >= -1 && Scanline < 240) {
+		DisplayPixelNameTable(0);
+    }
     
-    //enter the Non-maskable interrupt
-    if (Scanline = 241 && Cycle == 1){
+    //enter the Non-maskable interrupt, start 
+    if (Scanline = 241 && Cycle == 1) {
         Status.VerticalBlank = 1;
         nmi = true & Control.EnableNMI;
+    }
+
+    //In the vertical blank, maybe NMI
+    if (Scanline >= 241 && Scanline < 261) {
+
     }
 
     //update cycle and scanline
@@ -112,5 +283,4 @@ void PPU::CLK() {
             Scanline = -1;
         }
     }
-
 }

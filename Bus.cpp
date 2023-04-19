@@ -1,4 +1,5 @@
 #include "Bus.h"
+#include "Loader.h"
 
 Bus::Bus() {
     // Clear RAM
@@ -14,10 +15,11 @@ Bus::~Bus() {
 }
 
 uint8_t Bus::CPURead(uint16_t addr, bool bReadOnly) {
+    
     if(addr >= 0x0000 && addr <= 0x1FFF) {
         return RAM[addr & 0x07FF];
     } else if(addr >= 0x2000 && addr <= 0x3FFF) {
-        //read data from (addr & 0x0007) from the cpu to ppu: return ppu.CPURead(addr & 0x0007, bReadOnly);
+        return PPU.CPURead(addr & 0x0007, bReadOnly);
     } else if(addr == 0x4016 || addr == 0x4017) { //capture the current state of the controller (user input)
         /*
         there are 8 controller bits, but we only read them one at a time. 
@@ -33,10 +35,11 @@ uint8_t Bus::CPURead(uint16_t addr, bool bReadOnly) {
 }
 
 void Bus::CPUWrite(uint16_t addr, uint8_t data) {
+    Cartridge->cpuWrite(addr, data);
     if(addr >= 0x0000 && addr <= 0x1FFF) {
         RAM[addr & 0x07FF] = data;
     } else if(addr >= 0x2000 && addr <= 0x3FFF) {
-        //write data to (addr & 0x0007) from ppu to cpu: ppu.CPUWrite(addr & 0x0007, data);
+        PPU.CPUWrite(addr & 0x0007, data);
     } else if(addr == 0x4014) { //DMA transfer, so passing data through OAM
         DMA_MSB = data;
         DMA_LSB = 0x00;
@@ -47,9 +50,9 @@ void Bus::CPUWrite(uint16_t addr, uint8_t data) {
     }
 }
 
-// void Bus::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge) {
-//     this->Cartridge = cartridge;
-// }
+void Bus::InsertCartridge(const std::shared_ptr<Loader>& cartridge) {
+    this->Cartridge = cartridge;
+}
 
 void Bus::RST() {
     cpu.RST();
@@ -72,7 +75,7 @@ void Bus::CLK() {
                 if(ClockCounter % 2 == 0) {
                     DMA_Data = CPURead(DMA_MSB << 8 | DMA_LSB);
                 } else {
-                    //TODO: write to ppu: ppu.OAM[DMA_LSB] = DMA_Data;
+                    PPU._OAM[DMA_LSB] = DMA_Data;
                     DMA_LSB++;
                     if(DMA_LSB == 0x00) { //wrapped around, so we wrote 256 bytes
                         DMA_Transfer = 0;

@@ -1,8 +1,19 @@
 #include <cstdint>
+#include "PixelEngine.h"
+#include "main.h"
+#include "Loader.h"
 
 struct Pixel {
     uint8_t r, b, g;
 };
+
+class PixelTable {
+    public:
+        void setPixel(int32_t x, int32_t y, Pixel pixel);
+    private:
+        Pixel* pixels;
+};
+
 
 class PPU {
     public:
@@ -11,11 +22,16 @@ class PPU {
 
     private:		
         uint8_t     NameTable[2][1024];
-        uint8_t     Patterns[2][4096];
+        uint8_t     Patterns[2][4096];//16 x 32
         uint8_t		Palettes[32];
         Pixel       Colors[0x40];
+        PixelTable  PixelNameTable[2];
+        PixelTable  PixelPatternTable[2];
     
     public:
+        void DisplayPixelNameTable(uint8_t table);
+        // void DisplaySprite(uint8_t sprite, uint8_t palette, uint16_t x, uint16_t y);
+        // PixelTable& GetPixelPatternTable(uint8_t table, uint8_t palette);
         Pixel&      GetColorFromPalette(uint8_t palette, uint8_t pixel);
 
     public:
@@ -71,10 +87,41 @@ class PPU {
             };
             uint8_t Reg;
         } Control;
+        
+        union LoopyRegister { //a register created by loopy that stores the current state of the rendering
+            struct {
+                uint16_t CoarseX : 5;
+                uint16_t CoarseY : 5;
+                uint16_t NametableX : 1;
+                uint16_t NametableY : 1;
+                uint16_t FineY : 3; //not going to use this for no scrolling
+                uint16_t DC : 1; //don't care; extra bit
+            };
+            uint16_t Reg = 0x0000;
+        };
+
+        LoopyRegister VRAMAddr; //background tile info
+        LoopyRegister TRAMAddr; //stored info, ready to be transferred to V-RAM Address
+
+        uint8_t AddressLatch = 0x00;
+        uint8_t PPUDataBuffer = 0x00;
+
+        struct ObjectAttributes{ //information of each sprite
+            uint8_t x; //x position of sprite
+            uint8_t y; //y position of sprite
+            uint8_t attribute; //priority, palette, orientation
+            uint8_t id; //ID of tile
+        } OAM[64];
+
+        uint8_t OAMAddr = 0x00;
+        uint8_t* _OAM = (uint8_t*) OAM;
+
+        std::shared_ptr<Loader> Cartridge;
 
 
     public:
-        void        CLK();
-        bool        nmi = false;
+        void CLK();
+        bool nmi = false;
+        void ConnectCartridge(const std::shared_ptr<Loader>& cartridge);
 };
 

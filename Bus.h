@@ -1,6 +1,8 @@
 #include <cstdint>
 #include <array>
 #include "MOS6502.h"
+#include "Loader.h"
+#include "PPU.h"
 
 class Bus {
 public: // Devices connected to bus
@@ -10,7 +12,10 @@ public: // Devices connected to bus
     std::array<uint8_t, 64 * 1024> RAM;
 
     //cartridge
-    // std::shared_ptr<Cartridge> Cartridge;
+    std::shared_ptr<Loader> Cartridge;
+
+    //PPU
+    PPU PPU;
 
     uint8_t Controller[2];
 
@@ -21,7 +26,7 @@ public: // Constructor and destructor
 public: // functions
     uint8_t CPURead(uint16_t addr, bool bReadOnly = false);
     void CPUWrite(uint16_t addr, uint8_t data);
-    // void InsertCartridge(const std::shared_ptr<Cartridge> cartridge);
+    void InsertCartridge(const std::shared_ptr<Loader>& cartridge);
     void RST();
     void CLK();
 

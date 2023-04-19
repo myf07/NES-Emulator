@@ -61,7 +61,7 @@ void Bus::InsertCartridge(std::shared_ptr<Loader>& loader) {
 
 void Bus::RST() {
     cpu.RST();
-    cartridge.RST();
+    cartridge->RST();
     //TODO: call ppu.RST();
     ClockCounter = 0;
     DMA_MSB = DMA_LSB = DMA_Data = 0;

@@ -32,7 +32,7 @@ public:
     uint8_t X = 0x00; // Index X
     uint8_t Y = 0x00; // Index Y
     uint16_t PC = 0x0000; // Program Counter
-    uint8_t S = 0x00; // Stack Pointer
+    uint8_t S = 0xFD; // Stack Pointer
     uint8_t P = 0x00; // Status Register (aka P)
 
     // Connects bus once ready
@@ -41,6 +41,7 @@ public:
     }
 
     // Addressing modes: 13 total
+    // Returns 1 if the "oops" cycle is needed, 0 otherwise
     uint8_t Implicit();
     uint8_t Accumulator();
     uint8_t Immediate();
@@ -56,6 +57,7 @@ public:
     uint8_t IndirectIndexed();
 
     // Opcodes: 56 total (+1 for invalid instruction)
+    // Returns 1 if the "oops" cycle is needed, 0 otherwise
     uint8_t ADC(); // Add with Carry
     uint8_t AND(); // Logical AND
     uint8_t ASL(); // Arithmetic Shift Left

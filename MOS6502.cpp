@@ -569,6 +569,15 @@ uint8_t MOS6502::AND() {
 }
 
 uint8_t MOS6502::ASL() {
+    fetch();
+    SetFlag(PFLAGS::C, (fetched_data & 0x80) == 0x80);
+    SetFlag(PFLAGS::Z, A == 0x00);
+    uint16_t shift = (fetched_data << 1) & 0x00FF;
+    SetFlag(PFLAGS::N, (shift & 0x0080) == 0x0080);
+    if (lookup[opcode].AddrMode == &MOS6502::Implicit)
+		A = (uint8_t)shift;
+	else
+        Write(abs_addr, (uint8_t)shift);
     return 0;
 }
 
@@ -726,10 +735,18 @@ uint8_t MOS6502::CPY() {
 }
 
 uint8_t MOS6502::DEC() {
+    fetch();
+    uint8_t decrement = (uint8_t)((fetched_data-1)&0x00FF);
+    SetFlag(PFLAGS::Z, decrement == 0);
+    SetFlag(PFLAGS::N, (decrement & 0x80) == 0x80);
+    Write(abs_addr, decrement);
     return 0;
 }
 
 uint8_t MOS6502::DEX() {
+    X = X-1;
+    SetFlag(PFLAGS::Z, X == 0x00);
+    SetFlag(PFLAGS::N, (X & 0x80) == 0x80);
     return 0;
 }
 
@@ -742,6 +759,11 @@ uint8_t MOS6502::EOR() {
 }
 
 uint8_t MOS6502::INC() {
+    fetch();
+    uint8_t increment = (uint8_t)((fetched_data+1)&0x00FF);
+    SetFlag(PFLAGS::Z, increment == 0);
+    SetFlag(PFLAGS::N, (increment & 0x80) == 0x80);
+    Write(abs_addr, increment);
     return 0;
 }
 
@@ -766,7 +788,11 @@ uint8_t MOS6502::LDA() {
 }
 
 uint8_t MOS6502::LDX() {
-    return 0;
+    fetch();
+    X = (uint8_t)fetched_data;
+    SetFlag(PFLAGS::Z, X == 0x00);
+    SetFlag(PFLAGS::N, (X&0x80) == 0x80);
+    return 1;
 }
 
 uint8_t MOS6502::LDY() {
@@ -774,10 +800,21 @@ uint8_t MOS6502::LDY() {
 }
 
 uint8_t MOS6502::LSR() {
+    fetch();
+    SetFlag(PFLAGS::C, fetched_data & 0x01);
+    uint8_t shift = fetched_data/2;
+    SetFlag(PFLAGS::Z, shift == 0);
+    SetFlag(PFLAGS::N, (shift & 0x80) == 0x80);
+
+    if (lookup[opcode].AddrMode == &MOS6502::Implicit)
+		A = shift;
+	else
+		Write(abs_addr, shift);
     return 0;
 }
 
 uint8_t MOS6502::NOP() {
+    // do nothing in this instruction :)
     return 0;
 }
 
@@ -810,10 +847,31 @@ uint8_t MOS6502::PLP() {
 }
 
 uint8_t MOS6502::ROL() {
-    return 0;
+    fetch();
+    uint16_t rotate = ((uint16_t)(fetched_data << 1) | GetFlag(C)) & 0x00FF;
+    SetFlag(PFLAGS::C, (fetched_data & 0x80) == 0x80);
+	SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, (rotate & 0x0080) == 0x0080);
+
+    if (lookup[opcode].AddrMode == &MOS6502::Implicit)
+		A = (uint8_t)rotate;
+	else
+		Write(abs_addr, (uint8_t)rotate);
+	
+	return 0;
 }
 
 uint8_t MOS6502::ROR() {
+    fetch();
+    SetFlag(PFLAGS::C, fetched_data & 0x01);
+    uint8_t shift = (fetched_data/2)|(GetFlag(C) << 7);
+    SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, (shift & 0x80) == 0x80);
+
+    if (lookup[opcode].AddrMode == &MOS6502::Implicit)
+		A = shift;
+	else
+		Write(abs_addr, shift);
     return 0;
 }
 
@@ -887,6 +945,7 @@ uint8_t MOS6502::STA() {
 }
 
 uint8_t MOS6502::STX() {
+    Write(abs_addr, X);
     return 0;
 }
 
@@ -895,6 +954,9 @@ uint8_t MOS6502::STY() {
 }
 
 uint8_t MOS6502::TAX() {
+    X = A;
+    SetFlag(PFLAGS::Z, X == 0x00);
+    SetFlag(PFLAGS::N, (X & 0x80) == 0x80);
     return 0;
 }
 
@@ -903,14 +965,21 @@ uint8_t MOS6502::TAY() {
 }
 
 uint8_t MOS6502::TSX() {
+    X = S;
+    SetFlag(PFLAGS::Z, X == 0x00);
+    SetFlag(PFLAGS::N, (X & 0x80) == 0x80);
     return 0;
 }
 
 uint8_t MOS6502::TXA() {
+    A = X;
+    SetFlag(PFLAGS::Z, A == 0x00);
+    SetFlag(PFLAGS::N, (A&0x80) == 0x80);
     return 0;
 }
 
 uint8_t MOS6502::TXS() {
+    S = X;
     return 0;
 }
 

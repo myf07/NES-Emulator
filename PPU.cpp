@@ -80,11 +80,86 @@ Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
 }
 
 uint8_t PPU::CPURead(uint16_t addr, bool rdonly = false) {
-	
+	uint8_t data = 0x00; //data we return
+	switch(addr) {
+		//Control register
+		case 0x0000: break;
+		//Mask register
+		case 0x0001: break;
+		//Status register
+		case 0x0002:
+			//reading from status resets these bits
+			Status.VerticalBlank = 0;
+			AddressLatch = 0;
+			//we only care about the top 3 bits
+			data = Status.Reg & 0xE0;
+			break;
+		//oam address
+		case 0x0003: break;
+		//oam data
+		case 0x0004: 
+			data = _OAM[OAMAddr];
+			break;
+		//scroll
+		case 0x0005: break;
+		//ppu address
+		case 0x0006: break;
+		//ppu data
+		case 0x0007:
+			data = PPUDataBuffer;
+			//reading data is delayed by 1 cycle
+			PPUDataBuffer = PPURead(VRAMAddr.Reg);
+			if(VRAMAddr.Reg >= 0x3F00) { //don't delay by 1 cycle if a palette address
+				data = PPUDataBuffer;
+			}
+			//all reads increment nametable address
+			VRAMAddr.Reg += (Control.IncrementMode ? 32 : 1);
+			break;
+	}
+	return data;
 }
 
 void PPU::CPUWrite(uint16_t addr, uint8_t data) {
-
+	switch(addr) {
+		//Control
+		case 0x0000: 
+			//update control register and set update TRAM nametables
+			Control.Reg = data;
+			TRAMAddr.NametableX = Control.NametableX;
+			TRAMAddr.NametableY = Control.NametableY;
+			break;
+		//Mask
+		case 0x0001:
+			Mask.Reg = data;
+			break;
+		case 0x0002: break;
+		//OAM address
+		case 0x0003: 
+			OAMAddr = data;
+			break;
+		//OAM data
+		case 0x0004:
+			_OAM[OAMAddr] = data;
+			break;
+		//scroll - not needed for no scroll games like Donkey Kong
+		//TODO
+		case 0x0005: break;
+		//PPU address
+		case 0x0006: 
+			if(AddressLatch == 0) {
+				TRAMAddr.Reg = (uint16_t) ((data & 0x3F) << 8) | (TRAMAddr.Reg & 0x00FF);
+			} else {
+				TRAMAddr.Reg = (TRAMAddr.Reg & 0x00FF) | data;
+				VRAMAddr = TRAMAddr;
+			}
+			AddressLatch = !AddressLatch;
+			break;
+		case 0x0007:
+			PPUWrite(VRAMAddr.Reg, data);
+			//all writes increment the nametable address
+			VRAMAddr.Reg += (Control.IncrementMode ? 32 : 1);
+			break;
+	}
 }
 
 uint8_t PPU::PPURead(uint16_t addr, bool rdonly = false) {

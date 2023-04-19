@@ -72,7 +72,7 @@ void Bus::CLK() {
                 if(ClockCounter % 2 == 0) {
                     DMA_Data = CPURead(DMA_MSB << 8 | DMA_LSB);
                 } else {
-                    //TODO: write to ppu: ppu.OAM[DMA_LSB] = DMA_Data;
+                    //TODO: write to ppu: ppu.pOAM[DMA_LSB] = DMA_Data;
                     DMA_LSB++;
                     if(DMA_LSB == 0x00) { //wrapped around, so we wrote 256 bytes
                         DMA_Transfer = 0;

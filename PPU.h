@@ -32,6 +32,8 @@ class PPU {
         PixelTable  PixelPatternTable[2];
         */
 
+        void DisplayPalette();
+        void DisplayPatterns();
         void DisplayPixelNameTable(uint8_t table);
         Pixel & GetColorFromPalette(uint8_t palette, uint8_t pixel);
 

@@ -13,8 +13,10 @@ SDL_Window * window;
 SDL_Surface * window_surface;
 unsigned int * pixels;
 
-const int resW = 256;
-const int resH = 240;
+int scale = 2;
+
+const int resW = 256 * scale;
+const int resH = 240 * scale;
 
 void initSDL() {
     // initialize SDL window
@@ -43,8 +45,14 @@ void initSDL() {
 
 void DisplayPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b) {
     // printf("%ld, %ld, %ld, %ld, %ld\n", x, y, r, g, b);
-    // Sleep(100);
-    pixels[x + y * resW] = SDL_MapRGB(window_surface->format, r, g, b);
+    x *= scale;
+    y *= scale;
+    for(int i = 0; i < scale; i++){
+        for(int j = 0; j < scale; j++){
+            pixels[x + i + (y + j) * resW] = SDL_MapRGB(window_surface->format, r, g, b);
+        }
+    }
+    
     SDL_UpdateWindowSurface(window);
 }
 
@@ -56,7 +64,7 @@ int main (int argv, char** args) {
     // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
     Bus console;
-    std::shared_ptr<Loader> loader = std::make_shared<Loader>("Donkey_Kong_World_Rev_A.nes"); // make cartridge 
+    std::shared_ptr<Loader> loader = std::make_shared<Loader>("nestest.nes"); // make cartridge 
     console.InsertCartridge(loader);
     console.RST();
 
@@ -94,7 +102,6 @@ int main (int argv, char** args) {
             }
         }
 */
-        // Sleep(500);
     }
    return 0;
 }

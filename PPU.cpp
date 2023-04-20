@@ -82,6 +82,74 @@ Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
     return Colors[PPURead(0x3F00 + (palette << 2) + pixel)];
 }
 
+void PPU::DisplayPalette() {
+	for(int p = 0; p < 8; p++){
+		for(int c = 0; c < 4; c++){
+			Pixel pi = GetColorFromPalette(p, c);
+			for(int i = 0; i < 8; i++){
+				for(int j = 0; j < 8; j++){
+					int16_t outputCol = c * 8 + i;
+					int16_t outputRow = p * 8 + j;
+					DisplayPixel(outputCol, outputRow, pi.r, pi.g, pi.b);
+				}
+			}
+		}
+	}
+}
+
+void PPU::DisplayPatterns() {
+	int palette = 4;
+	for(int i = 0; i < 16; i++) {
+		for(int j = 0; j < 16; j++) {
+			//where is this sprite in the pattern table?
+			int16_t spriteIdx = 16 * (16 * j + i);
+			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
+				uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
+				uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
+
+				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
+				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
+					// THIS MIGHT BE WRONG :) --------------------------------------------------
+					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
+					lsb >>= 1;
+					msb >>= 1;
+
+					uint16_t outputRow = j * 8 + combinedIdxRow;
+					uint16_t outputCol = i * 8 + combinedIdxCol;		
+
+					Pixel p = GetColorFromPalette(palette, color);
+					DisplayPixel(outputCol, outputRow, p.r, p.g, p.b);
+		
+				}
+			}
+		}
+	}
+	for(int i = 0; i < 16; i++) {
+		for(int j = 0; j < 16; j++) {
+			//where is this sprite in the pattern table?
+			int16_t spriteIdx = 16 * (16 * j + i);
+			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
+				uint8_t lsb = Patterns[1][spriteIdx+2*combinedIdxRow];
+				uint8_t msb = Patterns[1][spriteIdx+2*combinedIdxRow+1];
+
+				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
+				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
+					// THIS MIGHT BE WRONG :) --------------------------------------------------
+					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
+					lsb >>= 1;
+					msb >>= 1;
+
+					uint16_t outputRow = j * 8 + combinedIdxRow;
+					uint16_t outputCol = 128 + i * 8 + combinedIdxCol;		
+
+					Pixel p = GetColorFromPalette(palette, color);
+					DisplayPixel(outputCol, outputRow, p.r, p.g, p.b);
+		
+				}
+			}
+		}
+	}
+}
 
 void PPU::DisplayPixelNameTable(uint8_t table) {
 	printf("DISPLAY??\n");
@@ -297,8 +365,10 @@ void PPU::CLK() {
     //stuff that is actually seen - do rendering
     //use -1 to configure first visible scanline
     if(Scanline >= -1 && Scanline < 240) {
-		  DisplayPixelNameTable(0);
-    }
+		   // DisplayPixelNameTable(0);
+			DisplayPalette();
+			// DisplayPatterns();
+	}
     
     //enter the Non-maskable interrupt
     if (Scanline = 241 && Cycle == 1){

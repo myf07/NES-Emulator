@@ -10,5 +10,6 @@
 10. Another NES Emulator repo: https://www.reddit.com/r/EmuDev/comments/dy177r/i_wrote_a_nes_emulator_in_c/
 11. (!) Blog post detailing roadmap: https://yizhang82.dev/blog/nes/
 12. (!) Simple DirectMedia Layer: https://www.libsdl.org/
+13. (!) NES Rendering System: https://austinmorlan.com/posts/nes_rendering_overview/
 
 (!) - Denotes a very important resource.

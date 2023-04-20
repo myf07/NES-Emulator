@@ -1,4 +1,5 @@
 #include "Bus.h"
+#include "MOS6502.h"
 
 // Constructor for CPU
 MOS6502::MOS6502() {
@@ -266,6 +267,23 @@ MOS6502::MOS6502() {
 MOS6502::~MOS6502() {
 
 }
+
+// FLAG FUNCTIONS
+// returns value in status register
+uint8_t MOS6502::GetFlag(PFLAGS flag)
+{
+	return ((P & flag) > 0) ? 1 : 0;
+}
+
+// sets value in status register
+void MOS6502::SetFlag(PFLAGS flag, bool valid)
+{
+	if (valid)
+		P |= flag;
+	else
+		P &= ~flag;
+}
+
 
 // Wrapper for reading from bus
 uint8_t MOS6502::Read(uint16_t addr) {

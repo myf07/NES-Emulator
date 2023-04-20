@@ -1,7 +1,7 @@
 #include <iostream>
 #include <memory>
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "Bus.h"
 #include "main.h"
@@ -43,19 +43,17 @@ void DisplayPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b) {
     pixels[x + y * resW] = SDL_MapRGB(window_surface->format, r, g, b);
 }
 
-int main() {
+int main (int argv, char** args) {
 
     // initialize graphics window
     initSDL();
 
     // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
-
- //   Bus bus;
- //   MOS6502 cpu;
- //   std::shared_ptr<Loader> loader = std::make_shared<Loader>("DonkeyKong.nes"); // make cartridge 
- //   bus.InsertCartridge(loader);
- //   bus.RST(); // initial reset
+    Bus console;
+    std::shared_ptr<Loader> loader = std::make_shared<Loader>("DonkeyKong.nes"); // make cartridge 
+    console.InsertCartridge(loader);
+    console.RST(); // initial reset
 
     // call the clock 
     while (1)
@@ -76,14 +74,15 @@ int main() {
                 }
             }
         }
-/* Might be useful for a buffer
+// Might be useful for a buffer
+/*
         //Set every pixel to white.
-        for (int y = 0; y < height; ++y)
+        for (int y = 0; y < resH; ++y)
         {
-            for (int x = 0; x < width; ++x)
+            for (int x = 0; x < resW; ++x)
             {
-                if((x + y * width) % 2 == 0) {
-                    pixels[x + y * width] =
+                if((x + y * resW) % 2 == 0) {
+                    pixels[x + y * resW] =
                         SDL_MapRGB(window_surface->format, 200, 100, 250);
                 }
             }

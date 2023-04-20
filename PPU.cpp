@@ -124,7 +124,7 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 	} 
 }
 
-uint8_t PPU::CPURead(uint16_t addr, bool rdonly = false) {
+uint8_t PPU::CPURead(uint16_t addr, bool rdonly) {
 	uint8_t data = 0x00; //data we return
 	switch(addr) {
 		//Control register
@@ -207,7 +207,7 @@ void PPU::CPUWrite(uint16_t addr, uint8_t data) {
 	}
 }
 
-uint8_t PPU::PPURead(uint16_t addr, bool rdonly = false) {
+uint8_t PPU::PPURead(uint16_t addr, bool rdonly) {
     uint8_t data = 0x00;
     addr &= 0x3FFF; //only want last 14 bits
     if(cartridge->ppuRead(addr, data)) { // intercepted by Loader

@@ -2,6 +2,15 @@
 #include <string>
 #include <vector>
 
+// Ths is required for translation table and disassembler. The table
+// could be implemented straight up as an array, but I used a vector.
+#include <vector>
+
+// These are required for disassembler. If you dont require disassembly
+// then just remove the function.
+#include <string>
+#include <map>
+
 // Forward declare Bus
 class Bus;
 
@@ -39,6 +48,10 @@ public:
     void ConnectBus(Bus *new_bus) {
         bus = new_bus;
     }
+
+    // Produces a map of strings, with keys equivalent to instruction start locations
+    // in memory, for the specified address range
+    std::map<uint16_t, std::string> disassemble(uint16_t nStart, uint16_t nStop);
 
     // Addressing modes: 13 total
     // Returns 1 if the "oops" cycle is needed, 0 otherwise

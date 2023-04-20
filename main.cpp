@@ -1,5 +1,7 @@
 #include <iostream>
 #include <memory>
+#include <stdlib.h>
+#include <windows.h>
 
 #include <SDL2/SDL.h>
 
@@ -40,7 +42,10 @@ void initSDL() {
 }
 
 void DisplayPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b) {
+    // printf("%ld, %ld, %ld, %ld, %ld\n", x, y, r, g, b);
+    // Sleep(100);
     pixels[x + y * resW] = SDL_MapRGB(window_surface->format, r, g, b);
+    SDL_UpdateWindowSurface(window);
 }
 
 int main (int argv, char** args) {
@@ -51,13 +56,14 @@ int main (int argv, char** args) {
     // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
     Bus console;
-    std::shared_ptr<Loader> loader = std::make_shared<Loader>("DonkeyKong.nes"); // make cartridge 
+    std::shared_ptr<Loader> loader = std::make_shared<Loader>("Donkey_Kong_World_Rev_A.nes"); // make cartridge 
     console.InsertCartridge(loader);
-    console.RST(); // initial reset
+    console.RST();
 
     // call the clock 
     while (1)
     {
+        console.CLK();
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -88,7 +94,7 @@ int main (int argv, char** args) {
             }
         }
 */
-        SDL_UpdateWindowSurface(window);
+        // Sleep(500);
     }
-
+   return 0;
 }

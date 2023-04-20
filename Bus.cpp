@@ -14,6 +14,7 @@ Bus::~Bus() {
 }
 
 uint8_t Bus::CPURead(uint16_t addr, bool bReadOnly) {
+    printf("BUS CPU READ, Address: %d, Read Only: %d\n", addr, bReadOnly);
     uint8_t data = 0x00;
 
     if(cartridge->cpuRead(addr, data)) { // intercept by Loader
@@ -62,7 +63,7 @@ void Bus::InsertCartridge(std::shared_ptr<Loader>& loader) {
 void Bus::RST() {
     cpu.RST();
     cartridge->RST();
-    //TODO: call ppu.RST();
+    //TODO: call ppu.RST(); ////////////////////////////////////////////////////////////////////////////////////////////////
     ClockCounter = 0;
     DMA_MSB = DMA_LSB = DMA_Data = 0;
     DMA_Transfer = 0;
@@ -70,11 +71,12 @@ void Bus::RST() {
 }
 
 void Bus::CLK() {
-    // call PPU clock function
-    PPU.CLK();
+    
+    printf("CLOCK COUNTER: %ld\n", ClockCounter);
 
     // call CPU clock function
     if(ClockCounter % 3 == 0) { //cpu clock only ticks every 3 cycles, whereas ppu ticks every cycle
+        /*
         if(DMA_Transfer) {
             if(DMA_Stall) {
                     //stall for 1 or 2 cycles
@@ -95,7 +97,13 @@ void Bus::CLK() {
         } else {
             cpu.CLK();
         }
+        */
+       cpu.CLK();
     }
+    
+    // call PPU clock function
+    PPU.CLK();
+
     // increment system clock counter
     ClockCounter++;
 }

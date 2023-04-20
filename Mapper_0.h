@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include "Mapper.h"
 
 class Mapper0 : public Mapper {
@@ -15,5 +16,5 @@ public:
 
     bool ppuRead(uint16_t addr, uint32_t &mAddr) override;
 
-    void reset() override;
+    void RST() override;
 };

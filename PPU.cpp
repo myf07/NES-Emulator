@@ -84,29 +84,39 @@ Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
 
 
 void PPU::DisplayPixelNameTable(uint8_t table) {
-
-	for(uint8_t nameTableRow = 0; nameTableRow < 30; nameTableRow++) {
-		for(uint8_t nameTableCol = 0; nameTableCol < 32; nameTableCol++) {
+	printf("DISPLAY??\n");
+	for(uint8_t nameTableRow = 0; nameTableRow < 32; nameTableRow++) {
+		for(uint8_t nameTableCol = 0; nameTableCol < 30; nameTableCol++) {
 			// metadata found in bottom two rows of name table
 			uint16_t metaIndex = (nameTableRow / 4) * 8 + (nameTableCol / 4);
 			uint16_t metaRow = 30 + metaIndex / 32;
 			uint16_t metaCol = metaIndex % 32;
 
+			// printf("Meta Index: %d, Meta Row: %d, Meta Column: %d\n", metaIndex, metaRow, metaCol);
+
 			//3, 2
 			//1, 0
 			uint8_t squareIndex = 2 * (nameTableRow % 2) + (nameTableCol % 2);
 
+			// printf("SquareIndex: %d\n", squareIndex);
+
 			//which palette we are using
 			uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
 
+			// printf("Palette: %d\n", palette);
+
 			// uint8_t spriteIdx = 16*NameTable[nameTableRow][nameTableCol];
 			uint8_t spriteIdx = 16 * NameTable[0][nameTableRow * 32 + nameTableCol];
+
+			// printf("Sprite Index: %d\n", spriteIdx);
 
 			uint8_t combinedPaletteColor[8][8];
 			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
 				uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
 				uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
-				for(uint8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
+
+				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
+				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
 					// THIS MIGHT BE WRONG :) --------------------------------------------------
 					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
 					combinedPaletteColor[combinedIdxRow][combinedIdxCol] = color;
@@ -117,11 +127,20 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 					uint16_t outputCol = nameTableCol * 8 + combinedIdxCol;		
 
 					Pixel p = GetColorFromPalette(palette, color);
+					// printf("Name Table comb Location: %ld, %ld\n", combinedIdxRow, combinedIdxCol);
+					// printf("Name Table Location: %ld, %ld\n", outputRow, outputCol);
+		
+
+					// printf("PRINT TO SCREEN. Pixel: %ld, %ld\n", outputCol, outputRow);
+					// printf("Name Table Location: %ld, %ld\n", nameTableCol, nameTableRow);
 					DisplayPixel(outputCol, outputRow, p.r, p.g, p.b);
+		
 				}
 			}
 		}
 	} 
+	// exit(0);
+	printf("END DISPLAY??\n");
 }
 
 uint8_t PPU::CPURead(uint16_t addr, bool rdonly) {
@@ -272,6 +291,8 @@ void PPU::ConnectCartridge(std::shared_ptr<Loader>& loader) {
 }
 
 void PPU::CLK() {
+
+	printf("PPU CLOCK\n");
 
     //stuff that is actually seen - do rendering
     //use -1 to configure first visible scanline

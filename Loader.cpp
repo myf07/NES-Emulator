@@ -1,7 +1,7 @@
 #include "Loader.h"
 #include <fstream>
 
-// iNES header format
+ // struct for data header
 typedef struct DataHeader {
     char name[4];
     uint8_t prgChunks;
@@ -15,7 +15,7 @@ typedef struct DataHeader {
 } DataHeader;
 
 Loader::Loader(const std::string &fName) {
-    DataHeader header; // struct for data header
+    DataHeader header;
 
     std::ifstream in;
     in.open(fName, std::ifstream::binary);
@@ -28,11 +28,21 @@ Loader::Loader(const std::string &fName) {
 
         // determine mapper ID
         mapperID = ((header.mapper2 >> 4) << 4 | (header.mapper1 >> 4));
+        printf("PRG CHUNKS: %d\n", header.prgChunks);
+        printf("CHR CHUNKS: %d\n", header.chrChunks);
+        printf("Header.mapper1: %d\n", header.mapper1);
+        printf("Header.mapper2: %d\n", header.mapper2);
+        printf("PRG RAM SIZE: %d\n", header.prgRamSize);
+        printf("tv System 1: %d\n", header.tvSystem1);
+        printf("tv System 2: %d\n", header.tvSystem2);
+        printf("Mapper ID: %d\n", mapperID);
 
         uint8_t fileType = 1;
+        if ((header.mapper2 & 0x0C) == 0x08) fileType = 2;
 
         // simplest file type is type 1
         if (fileType == 1) {
+            printf("FILE TYPE 1!\n");
             // number of banks for CPU and PPU ROM
             numPrgBanks = header.prgChunks;
             numChrBanks = header.chrChunks;
@@ -46,11 +56,13 @@ Loader::Loader(const std::string &fName) {
             in.read((char *) chrMem.data(), chrMem.size());
         }
 
+        printf("WE GOTOUT\n");
         in.close();
     }
 
     // configure mapper
     if (mapperID == 0) {
+        printf("Configuring mapper 0\n");
         mapperPtr = new Mapper0(numPrgBanks, numChrBanks);
     }
 }
@@ -69,6 +81,8 @@ bool Loader::cpuWrite(uint16_t address, uint8_t data) {
 }
 
 bool Loader::cpuRead(uint16_t address, uint8_t &data) {
+    printf("CARTREAD :), Address: %d\n", address);
+
     uint32_t mappedAddress = 0;
     if (mapperPtr->cpuRead(address, mappedAddress)) {
         data = prgMem[mappedAddress];
@@ -97,6 +111,6 @@ bool Loader::ppuRead(uint16_t address, uint8_t &data) {
 
 void Loader::RST() {
     if(mapperPtr != 0) {
-        mapperPtr->reset();
+        mapperPtr->RST();
     }
 }

@@ -1,6 +1,8 @@
 #include "Mapper_0.h"
 
 bool Mapper0::cpuRead(uint16_t addr, uint32_t &mAddr) {
+    printf("MAPPER 0 READING :), Address: %d\n", addr);
+
     mAddr = addr & (nPRGBanks > 1 ? 0x7FFF : 0x3FFF);
     return (addr >= 0x8000) && (addr <= 0xFFFF);
 }
@@ -21,6 +23,6 @@ bool Mapper0::ppuWrite(uint16_t addr, uint32_t &mAddr) {
 }
 
 // reset
-void Mapper0::reset() {
+void Mapper0::RST() {
 
 }

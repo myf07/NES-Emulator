@@ -5,6 +5,6 @@ Mapper::Mapper(uint8_t numPRGBanks, uint8_t numCHRBanks) {
     nCHRBanks = numCHRBanks;
 }
 
-void Mapper::reset() {
+void Mapper::RST() {
 
 }

@@ -276,9 +276,9 @@ uint8_t MOS6502::GetFlag(PFLAGS flag)
 }
 
 // sets value in status register
-void MOS6502::SetFlag(PFLAGS flag, bool valid)
+void MOS6502::SetFlag(PFLAGS flag, bool value)
 {
-	if (valid)
+	if (value)
 		P |= flag;
 	else
 		P &= ~flag;
@@ -287,6 +287,7 @@ void MOS6502::SetFlag(PFLAGS flag, bool valid)
 
 // Wrapper for reading from bus
 uint8_t MOS6502::Read(uint16_t addr) {
+    printf("READING PC?\n");
     return bus->CPURead(addr, false);
 }
 
@@ -297,6 +298,8 @@ void MOS6502::Write(uint16_t addr, uint8_t data) {
 
 // Calls everytime a new cycle starts
 void MOS6502::CLK() {
+    printf("CPU CLOCK\n");
+
     // Next instruction starts when the previous instruction's cycle count is 0
     if(cycles == 0) {
         opcode = Read(PC);

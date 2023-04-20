@@ -39,6 +39,7 @@ uint8_t Bus::CPURead(uint16_t addr, bool bReadOnly) {
 }
 
 void Bus::CPUWrite(uint16_t addr, uint8_t data) {
+    printf("WRITING ON BUS......\n");
     if(cartridge->cpuWrite(addr, data)) { // intercept by Loader
         // Loader handled write, do nothing
     } else if(addr >= 0x0000 && addr <= 0x1FFF) { // writing to CPU

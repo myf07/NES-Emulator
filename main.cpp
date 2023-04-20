@@ -64,7 +64,7 @@ int main (int argv, char** args) {
     // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
     Bus console;
-    std::shared_ptr<Loader> loader = std::make_shared<Loader>("Donkey_Kong_World_Rev_A.nes"); // make cartridge 
+    std::shared_ptr<Loader> loader = std::make_shared<Loader>("./tests/Donkey_Kong_World_Rev_A.nes"); // make cartridge 
     console.InsertCartridge(loader);
     console.RST();
 

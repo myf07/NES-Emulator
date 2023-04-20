@@ -293,17 +293,19 @@ uint8_t MOS6502::Read(uint16_t addr) {
 
 // Wrapper for writing to bus
 void MOS6502::Write(uint16_t addr, uint8_t data) {
+    printf("WRITING CPU!!\n");
     bus->CPUWrite(addr, data);
 }
 
 // Calls everytime a new cycle starts
 void MOS6502::CLK() {
-    printf("CPU CLOCK\n");
+    printf("CPU CLOCK, PC: %x\n", PC);
 
     // Next instruction starts when the previous instruction's cycle count is 0
     if(cycles == 0) {
         opcode = Read(PC);
         ++PC;
+        printf("CPU CLOCK OPCODE: %d", opcode);
 
         cycles = lookup[opcode].cycles;
         uint8_t const oops_cycle1 = (this->*lookup[opcode].AddrMode)();

@@ -50,7 +50,10 @@ Loader::Loader(const std::string &fName) {
 
             // size of ROM in bytes
             prgMem.resize(16384 * numPrgBanks);
-            chrMem.resize(8192 * numChrBanks);
+            if(numChrBanks == 0) 
+                chrMem.resize(8192);
+            else
+                chrMem.resize(8192 * numChrBanks);
 
             // reads in ROM contents
             in.read((char *) prgMem.data(), prgMem.size());
@@ -79,8 +82,6 @@ bool Loader::cpuWrite(uint16_t address, uint8_t data) {
 }
 
 bool Loader::cpuRead(uint16_t address, uint8_t &data) {
-    printf("CARTREAD :), Address: %d\n", address);
-
     uint32_t mappedAddress = 0;
     if (mapperPtr->cpuRead(address, mappedAddress)) {
         data = prgMem[mappedAddress];

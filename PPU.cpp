@@ -1,6 +1,7 @@
 
 #include <cstdint>
 #include "PPU.h"
+#include <iomanip>
 
 PPU::PPU(){
 
@@ -162,9 +163,9 @@ void PPU::DisplayPatterns() {
 }
 
 void PPU::DisplayPixelNameTable(uint8_t table) {
-	printf("DISPLAY??\n");
-	for(uint8_t nameTableRow = 0; nameTableRow < 32; nameTableRow++) {
-		for(uint8_t nameTableCol = 0; nameTableCol < 30; nameTableCol++) {
+	for(uint16_t nameTableRow = 0; nameTableRow < 30; nameTableRow++) {
+		for(uint16_t nameTableCol = 0; nameTableCol < 32; nameTableCol++) {
+
 			// metadata found in bottom two rows of name table
 			uint16_t metaIndex = (nameTableRow / 4) * 8 + (nameTableCol / 4);
 			uint16_t metaRow = 30 + metaIndex / 32;
@@ -174,34 +175,38 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 
 			//3, 2
 			//1, 0
-			uint8_t squareIndex = 2 * (nameTableRow % 2) + (nameTableCol % 2);
+			uint16_t squareIndex = 2 * (nameTableRow % 2) + (nameTableCol % 2);
 
 			// printf("SquareIndex: %d\n", squareIndex);
 
 			//which palette we are using
 			// uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
-			uint8_t palette = PPURead(0x2000 + metaRow * 32 + metaCol) & (0x03 << squareIndex));
+			printf("GETTING PALETTE...\n");
+			uint16_t palette = PPURead(0x2000 + (metaRow * 32 + metaCol) ) & (0x03 << squareIndex);
 
-			// printf("Palette: %d\n", palette);
+			printf("GETTING NAMETABLE...\n");
+			uint16_t namePattern = PPURead(0x2000 + (nameTableRow * 32 + nameTableCol));
+			//uint16_t namePattern = NameTable[0][nameTableRow * 32 + nameTableCol];
+	/*
+			if(namePattern < 16){
+				printf("0");
+			}
+			printf("%x  ", namePattern);
+	*/
 
-			// uint8_t spriteIdx = 16*NameTable[nameTableRow][nameTableCol];
-			// uint8_t spriteIdx = 16 * NameTable[0][nameTableRow * 32 + nameTableCol];
-			uint8_t spriteIdx = 16 * PPURead(0x2000 + nameTableRow * 32 + nameTableCol);
-
-			// printf("Sprite Index: %d\n", spriteIdx);
-
-			uint8_t combinedPaletteColor[8][8];
+			//uint8_t combinedPaletteColor[8][8];
 			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
-				// uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
-				// uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
-				uint8_t lsb = PPURead(0 + spriteIdx + combinedIdxRow);
-				uint8_t msb = PPURead(0 + spriteIdx + combinedIdxRow + 8);
+				printf("GETTING LSB...\n");
+				uint8_t lsb = PPURead(0x1000 + namePattern * 16 + combinedIdxRow);
+				printf("GETTING MSB...\n");
+				uint8_t msb = PPURead(0x1000 + namePattern * 16 + 8 + combinedIdxRow);
+				// printf("LSB : %x, MSB: %x\n", lsb, msb);
 
 				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
 				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
 					// THIS MIGHT BE WRONG :) --------------------------------------------------
 					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
-					combinedPaletteColor[combinedIdxRow][combinedIdxCol] = color;
+				//	combinedPaletteColor[combinedIdxRow][combinedIdxCol] = color;
 					lsb >>= 1;
 					msb >>= 1;
 
@@ -209,19 +214,13 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 					uint16_t outputCol = nameTableCol * 8 + combinedIdxCol;		
 
 					Pixel p = GetColorFromPalette(palette, color);
-					// printf("Name Table comb Location: %ld, %ld\n", combinedIdxRow, combinedIdxCol);
-					// printf("Name Table Location: %ld, %ld\n", outputRow, outputCol);
-		
-
-					// printf("PRINT TO SCREEN. Pixel: %ld, %ld\n", outputCol, outputRow);
-					// printf("Name Table Location: %ld, %ld\n", nameTableCol, nameTableRow);
 					DisplayPixel(outputCol, outputRow, p.r, p.g, p.b);
-		
 				}
 			}
+			
 		}
+		cout << "\n";
 	} 
-	// exit(0);
 }
 
 uint8_t PPU::CPURead(uint16_t addr, bool rdonly) {
@@ -265,6 +264,8 @@ uint8_t PPU::CPURead(uint16_t addr, bool rdonly) {
 }
 
 void PPU::CPUWrite(uint16_t addr, uint8_t data) {
+	printf("ATTEMPTING TO WRITE AT %d...\n", addr);
+
 	switch(addr) {
 		//Control
 		case 0x0000: 
@@ -300,6 +301,7 @@ void PPU::CPUWrite(uint16_t addr, uint8_t data) {
 			AddressLatch = !AddressLatch;
 			break;
 		case 0x0007:
+			printf("CASE 0x0007\n");
 			PPUWrite(VRAMAddr.Reg, data);
 			//all writes increment the nametable address
 			VRAMAddr.Reg += (Control.IncrementMode ? 32 : 1);
@@ -309,14 +311,19 @@ void PPU::CPUWrite(uint16_t addr, uint8_t data) {
 
 uint8_t PPU::PPURead(uint16_t addr, bool rdonly) {
     uint8_t data = 0x00;
+	// printf("ADDRESS_0: %x\n", addr);
     addr &= 0x3FFF; //only want last 14 bits
+	
     if(cartridge->ppuRead(addr, data)) { // intercepted by Loader
+		// printf("ADDRESS_1: %x\n", addr);
+		// printf("READING FROM LOADER\n");
 		// Loader handled PPU read, do nothing
 	} else if(addr >= 0x0000 && addr <= 0x1FFF) {
+		// printf("READING FROM PATTERN TABLE\n");
         data = Patterns[(addr & 0x1000) > 0][addr & 0x0FFF];
     } else if(addr >= 0x2000 && addr <= 0x3EFF) {
         addr &= 0x0FFF;
-
+		
 		//vertical
 		if (addr >= 0x0000 && addr <= 0x03FF)
 			data = NameTable[0][addr & 0x03FF];
@@ -327,6 +334,15 @@ uint8_t PPU::PPURead(uint16_t addr, bool rdonly) {
 		if (addr >= 0x0C00 && addr <= 0x0FFF)
 			data = NameTable[1][addr & 0x03FF];
         //TODO: mirror stuff
+		// if (addr >= 0x0000 && addr <= 0x03FF)
+		// 	data = NameTable[0][addr & 0x03FF];
+		// if (addr >= 0x0400 && addr <= 0x07FF)
+		// 	data = NameTable[0][addr & 0x03FF];
+		// if (addr >= 0x0800 && addr <= 0x0BFF)
+		// 	data = NameTable[1][addr & 0x03FF];
+		// if (addr >= 0x0C00 && addr <= 0x0FFF)
+		// 	data = NameTable[1][addr & 0x03FF];
+
     } else if(addr >= 0x3F00 && addr <= 0x3FFF) {
         addr &= 0x001F;
         if (addr == 0x0010) addr = 0x0000;
@@ -339,6 +355,7 @@ uint8_t PPU::PPURead(uint16_t addr, bool rdonly) {
 }
 
 void PPU::PPUWrite(uint16_t addr, uint8_t data) {
+	printf("PPUWROTE\n");
     addr &= 0x3FFF;
     if(cartridge->ppuWrite(addr, data)) { // intercepted by Loader
 		// Loader handled PPU write, do nothing
@@ -346,7 +363,7 @@ void PPU::PPUWrite(uint16_t addr, uint8_t data) {
         Patterns[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
     } else if(addr >= 0x2000 && addr <= 0x3EFF) {
         addr &= 0x0FFF;
-
+	
 		// Vertical
 		if (addr >= 0x0000 && addr <= 0x03FF)
 			NameTable[0][addr & 0x03FF] = data;
@@ -382,8 +399,8 @@ void PPU::CLK() {
     //stuff that is actually seen - do rendering
     //use -1 to configure first visible scanline
     if(Scanline >= -1 && Scanline < 240) {
-		//    DisplayPixelNameTable(0);
-			// DisplayPalette();
+		    // DisplayPixelNameTable(0);
+			 DisplayPalette();
 			// DisplayPatterns();
 	}
     

@@ -1,8 +1,9 @@
+#pragma once
 #include <array>
 #include <cstdint>
 #include <memory>
-#include "MOS6502.h"
 #include "Loader.h"
+#include "MOS6502.h"
 #include "PPU.h"
 
 class Bus {

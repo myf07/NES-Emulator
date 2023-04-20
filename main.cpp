@@ -1,10 +1,10 @@
 #include <iostream>
 #include <memory>
 
-#include "Bus.h"
-#include "Loader.h"
-#include "main.h"
 #include <SDL.h>
+
+#include "Bus.h"
+#include "main.h"
 
 // SDL Graphics Code
 SDL_Window * window;
@@ -50,11 +50,12 @@ int main() {
 
     // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
-    Bus bus;
-    MOS6502 cpu;
-    std::shared_ptr<Loader> loader = std::make_shared<Loader>("DonkeyKong.nes"); // make cartridge 
-    bus.InsertCartridge(loader);
-    bus.RST(); // initial reset
+
+ //   Bus bus;
+ //   MOS6502 cpu;
+ //   std::shared_ptr<Loader> loader = std::make_shared<Loader>("DonkeyKong.nes"); // make cartridge 
+ //   bus.InsertCartridge(loader);
+ //   bus.RST(); // initial reset
 
     // call the clock 
     while (1)
@@ -69,9 +70,9 @@ int main() {
                 {
                     window_surface = SDL_GetWindowSurface(window);
                     pixels = (unsigned int *) window_surface->pixels;
-                    width = window_surface->w;
-                    height = window_surface->h;
-                    printf("Size changed: %d, %d\n", width, height);
+                    // width = window_surface->w;
+                    // height = window_surface->h;
+                    // printf("Size changed: %d, %d\n", width, height);
                 }
             }
         }
@@ -90,4 +91,5 @@ int main() {
 */
         SDL_UpdateWindowSurface(window);
     }
+
 }

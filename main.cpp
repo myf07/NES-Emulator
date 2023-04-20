@@ -11,22 +11,15 @@ SDL_Window * window;
 SDL_Surface * window_surface;
 unsigned int * pixels;
 
-int resW = 256;
-int resH = 240;
+const int resW = 256;
+const int resH = 240;
 
-void DisplayPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b) {
-    pixels[x + y * resW] = SDL_MapRGB(window_surface->format, r, g, b);
-}
-
-int main() {
-
+void initSDL() {
     // initialize SDL window
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
         std::cout << "SDL could not be initialized: " << SDL_GetError();
-    }
-    else {
+    else
         std::cout << "SDL video system is ready to go\n";
-    }
 
     window = window = SDL_CreateWindow(
         "NES Emulator",        // window title
@@ -43,14 +36,25 @@ int main() {
     int width = window_surface->w;
     int height = window_surface->h;
 
-    printf("Pixel format: %s\n",
-        SDL_GetPixelFormatName(window_surface->format->format));
+    printf("Pixel format: %s\n", SDL_GetPixelFormatName(window_surface->format->format));
+}
+
+void DisplayPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b) {
+    pixels[x + y * resW] = SDL_MapRGB(window_surface->format, r, g, b);
+}
+
+int main() {
+
+    // initialize graphics window
+    initSDL();
 
     // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
-    Bus nesBus;
+    Bus bus;
+    MOS6502 cpu;
     std::shared_ptr<Loader> loader = std::make_shared<Loader>("DonkeyKong.nes"); // make cartridge 
-    nesBus.InsertCartridge(loader);
+    bus.InsertCartridge(loader);
+    bus.RST(); // initial reset
 
     // call the clock 
     while (1)

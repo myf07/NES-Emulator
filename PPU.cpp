@@ -99,7 +99,8 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 			//which palette we are using
 			uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
 
-			uint8_t spriteIdx = 16*NameTable[nameTableRow][nameTableCol];
+			// uint8_t spriteIdx = 16*NameTable[nameTableRow][nameTableCol];
+			uint8_t spriteIdx = 16 * NameTable[0][nameTableRow * 32 + nameTableCol];
 
 			uint8_t combinedPaletteColor[8][8];
 			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
@@ -215,6 +216,16 @@ uint8_t PPU::PPURead(uint16_t addr, bool rdonly = false) {
         data = Patterns[(addr & 0x1000) > 0][addr & 0x0FFF];
     } else if(addr >= 0x2000 && addr <= 0x3EFF) {
         addr &= 0x0FFF;
+
+		//vertical
+		if (addr >= 0x0000 && addr <= 0x03FF)
+			data = NameTable[0][addr & 0x03FF];
+		if (addr >= 0x0400 && addr <= 0x07FF)
+			data = NameTable[1][addr & 0x03FF];
+		if (addr >= 0x0800 && addr <= 0x0BFF)
+			data = NameTable[0][addr & 0x03FF];
+		if (addr >= 0x0C00 && addr <= 0x0FFF)
+			data = NameTable[1][addr & 0x03FF];
         //TODO: mirror stuff
     } else if(addr >= 0x3F00 && addr <= 0x3FFF) {
         addr &= 0x001F;
@@ -235,6 +246,16 @@ void PPU::PPUWrite(uint16_t addr, uint8_t data) {
         Patterns[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
     } else if(addr >= 0x2000 && addr <= 0x3EFF) {
         addr &= 0x0FFF;
+
+		// Vertical
+		if (addr >= 0x0000 && addr <= 0x03FF)
+			NameTable[0][addr & 0x03FF] = data;
+		if (addr >= 0x0400 && addr <= 0x07FF)
+			NameTable[1][addr & 0x03FF] = data;
+		if (addr >= 0x0800 && addr <= 0x0BFF)
+			NameTable[0][addr & 0x03FF] = data;
+		if (addr >= 0x0C00 && addr <= 0x0FFF)
+			NameTable[1][addr & 0x03FF] = data;
         //TODO: mirror stuff
     } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
 		addr &= 0x001F;

@@ -56,7 +56,7 @@ Loader::Loader(const std::string &fName) {
 }
 
 Loader::~Loader() {
-    delete mapperPtr;
+   // delete mapperPtr;
 }
 
 bool Loader::cpuWrite(uint16_t address, uint8_t data) {

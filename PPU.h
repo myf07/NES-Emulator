@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <memory>
 #include "Loader.h"
@@ -67,7 +68,7 @@ class PPU {
                 uint8_t RenderSprites : 1;
                 uint8_t EnhanceRed : 1;
                 uint8_t EnhanceGreen : 1;
-                uint8_t EnhanceRed : 1;
+                uint8_t EnhanceBlue : 1;
             };
             uint8_t Reg;
         } Mask;

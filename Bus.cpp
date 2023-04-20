@@ -63,7 +63,7 @@ void Bus::InsertCartridge(std::shared_ptr<Loader>& loader) {
 void Bus::RST() {
     cpu.RST();
     cartridge->RST();
-    //TODO: call ppu.RST(); ////////////////////////////////////////////////////////////////////////////////////////////////
+    PPU.RST();
     ClockCounter = 0;
     DMA_MSB = DMA_LSB = DMA_Data = 0;
     DMA_Transfer = 0;
@@ -103,6 +103,11 @@ void Bus::CLK() {
     
     // call PPU clock function
     PPU.CLK();
+
+    if(PPU.nmi) {
+        PPU.nmi = false;
+        cpu.NMI();
+    }
 
     // increment system clock counter
     ClockCounter++;

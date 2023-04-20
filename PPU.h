@@ -122,6 +122,7 @@ class PPU {
 
     public:
         void CLK();
+        void RST();
         bool nmi = false;
         void ConnectCartridge(std::shared_ptr<Loader>& loader);
 };

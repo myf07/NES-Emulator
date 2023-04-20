@@ -79,7 +79,8 @@ PPU::~PPU(){
 
 Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
     //palette << 2 to get to the right palette, pixel to select the right color
-    return Colors[PPURead(0x3F00 + (palette << 2) + pixel)];
+    return Colors[PPURead(0x3F00 + (palette << 2) + pixel) & 0x3F];
+	// return Colors[Palettes[palette * 4 + pixel]];
 }
 
 void PPU::DisplayPalette() {
@@ -104,8 +105,14 @@ void PPU::DisplayPatterns() {
 			//where is this sprite in the pattern table?
 			int16_t spriteIdx = 16 * (16 * j + i);
 			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
-				uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
-				uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
+				// uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
+				// uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
+
+				// uint8_t lsb = Patterns[0][spriteIdx+combinedIdxRow];
+				// uint8_t msb = Patterns[0][spriteIdx+combinedIdxRow+8];
+
+				uint8_t lsb = PPURead(0 + spriteIdx + combinedIdxRow);
+				uint8_t msb = PPURead(0 + spriteIdx + combinedIdxRow + 8);
 
 				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
 				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
@@ -129,8 +136,11 @@ void PPU::DisplayPatterns() {
 			//where is this sprite in the pattern table?
 			int16_t spriteIdx = 16 * (16 * j + i);
 			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
-				uint8_t lsb = Patterns[1][spriteIdx+2*combinedIdxRow];
-				uint8_t msb = Patterns[1][spriteIdx+2*combinedIdxRow+1];
+				// uint8_t lsb = Patterns[1][spriteIdx+2*combinedIdxRow];
+				// uint8_t msb = Patterns[1][spriteIdx+2*combinedIdxRow+1];
+
+				uint8_t lsb = PPURead(0x1000 + spriteIdx + combinedIdxRow);
+				uint8_t msb = PPURead(0x1000 + spriteIdx + combinedIdxRow + 8);
 
 				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
 				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
@@ -169,19 +179,23 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 			// printf("SquareIndex: %d\n", squareIndex);
 
 			//which palette we are using
-			uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
+			// uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
+			uint8_t palette = PPURead(0x2000 + metaRow * 32 + metaCol) & (0x03 << squareIndex));
 
 			// printf("Palette: %d\n", palette);
 
 			// uint8_t spriteIdx = 16*NameTable[nameTableRow][nameTableCol];
-			uint8_t spriteIdx = 16 * NameTable[0][nameTableRow * 32 + nameTableCol];
+			// uint8_t spriteIdx = 16 * NameTable[0][nameTableRow * 32 + nameTableCol];
+			uint8_t spriteIdx = 16 * PPURead(0x2000 + nameTableRow * 32 + nameTableCol);
 
 			// printf("Sprite Index: %d\n", spriteIdx);
 
 			uint8_t combinedPaletteColor[8][8];
 			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
-				uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
-				uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
+				// uint8_t lsb = Patterns[0][spriteIdx+2*combinedIdxRow];
+				// uint8_t msb = Patterns[0][spriteIdx+2*combinedIdxRow+1];
+				uint8_t lsb = PPURead(0 + spriteIdx + combinedIdxRow);
+				uint8_t msb = PPURead(0 + spriteIdx + combinedIdxRow + 8);
 
 				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
 				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
@@ -208,7 +222,6 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 		}
 	} 
 	// exit(0);
-	printf("END DISPLAY??\n");
 }
 
 uint8_t PPU::CPURead(uint16_t addr, bool rdonly) {
@@ -362,11 +375,15 @@ void PPU::CLK() {
 
 	printf("PPU CLOCK\n");
 
+	if(Scanline == -1 && Cycle == 1) {
+		Status.VerticalBlank = 0;
+	}
+
     //stuff that is actually seen - do rendering
     //use -1 to configure first visible scanline
     if(Scanline >= -1 && Scanline < 240) {
-		   // DisplayPixelNameTable(0);
-			DisplayPalette();
+		//    DisplayPixelNameTable(0);
+			// DisplayPalette();
 			// DisplayPatterns();
 	}
     
@@ -389,4 +406,10 @@ void PPU::CLK() {
             Scanline = -1;
         }
     }
+}
+
+// reset the PPU
+void PPU::RST() {
+	Scanline = 0;
+	Cycle = 0;
 }

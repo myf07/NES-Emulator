@@ -64,7 +64,7 @@ int main (int argv, char** args) {
     // initiaize NES circuit components
     // initialize CPU, PPU, Bus, APU
     Bus console;
-    std::shared_ptr<Loader> loader = std::make_shared<Loader>("nestest.nes"); // make cartridge 
+    std::shared_ptr<Loader> loader = std::make_shared<Loader>("Donkey_Kong_World_Rev_A.nes"); // make cartridge 
     console.InsertCartridge(loader);
     console.RST();
 
@@ -82,26 +82,10 @@ int main (int argv, char** args) {
                 {
                     window_surface = SDL_GetWindowSurface(window);
                     pixels = (unsigned int *) window_surface->pixels;
-                    // width = window_surface->w;
-                    // height = window_surface->h;
-                    // printf("Size changed: %d, %d\n", width, height);
                 }
             }
         }
-// Might be useful for a buffer
-/*
-        //Set every pixel to white.
-        for (int y = 0; y < resH; ++y)
-        {
-            for (int x = 0; x < resW; ++x)
-            {
-                if((x + y * resW) % 2 == 0) {
-                    pixels[x + y * resW] =
-                        SDL_MapRGB(window_surface->format, 200, 100, 250);
-                }
-            }
-        }
-*/
     }
+
    return 0;
 }

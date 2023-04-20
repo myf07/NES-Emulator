@@ -28,6 +28,7 @@ Loader::Loader(const std::string &fName) {
 
         // determine mapper ID
         mapperID = ((header.mapper2 >> 4) << 4 | (header.mapper1 >> 4));
+
         printf("PRG CHUNKS: %d\n", header.prgChunks);
         printf("CHR CHUNKS: %d\n", header.chrChunks);
         printf("Header.mapper1: %d\n", header.mapper1);
@@ -38,11 +39,11 @@ Loader::Loader(const std::string &fName) {
         printf("Mapper ID: %d\n", mapperID);
 
         uint8_t fileType = 1;
-        if ((header.mapper2 & 0x0C) == 0x08) fileType = 2;
+        if ((header.mapper2 & 0x0C) == 0x08) 
+            fileType = 2;
 
         // simplest file type is type 1
         if (fileType == 1) {
-            printf("FILE TYPE 1!\n");
             // number of banks for CPU and PPU ROM
             numPrgBanks = header.prgChunks;
             numChrBanks = header.chrChunks;
@@ -55,14 +56,11 @@ Loader::Loader(const std::string &fName) {
             in.read((char *) prgMem.data(), prgMem.size());
             in.read((char *) chrMem.data(), chrMem.size());
         }
-
-        printf("WE GOTOUT\n");
         in.close();
     }
 
     // configure mapper
     if (mapperID == 0) {
-        printf("Configuring mapper 0\n");
         mapperPtr = new Mapper0(numPrgBanks, numChrBanks);
     }
 }

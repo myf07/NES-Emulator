@@ -45,7 +45,7 @@ MOS6502::MOS6502() {
                 {"ROL", &MOS6502::ROL, &MOS6502::ZeroPage, 5}, // 0x26
                 {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x27
                 {"PLP", &MOS6502::PLP, &MOS6502::Implicit, 4}, // 0x28
-                {"AND", &MOS6502::AND, &MOS6502::Implicit, 2}, // 0x29
+                {"AND", &MOS6502::AND, &MOS6502::Immediate, 2}, // 0x29
                 {"ROL", &MOS6502::ROL, &MOS6502::Implicit, 2}, // 0x2A
                 {"???", &MOS6502::BAD, &MOS6502::Implicit, 0}, // 0x2B
                 {"BIT", &MOS6502::BIT, &MOS6502::Absolute, 4}, // 0x2C
@@ -287,42 +287,49 @@ void MOS6502::SetFlag(PFLAGS flag, bool value)
 
 // Wrapper for reading from bus
 uint8_t MOS6502::Read(uint16_t addr) {
-    printf("READING PC?\n");
     return bus->CPURead(addr, false);
 }
 
 // Wrapper for writing to bus
 void MOS6502::Write(uint16_t addr, uint8_t data) {
-    printf("WRITING CPU!!\n");
     bus->CPUWrite(addr, data);
 }
 
 // Calls everytime a new cycle starts
 void MOS6502::CLK() {
-    printf("CPU CLOCK, PC: %x\n", PC);
+    //printf("CPU CLOCK, PC: %x, CYCLES: %d\n", PC, cycles);
 
     // Next instruction starts when the previous instruction's cycle count is 0
     if(cycles == 0) {
         opcode = Read(PC);
         ++PC;
-        printf("CPU CLOCK OPCODE: %d", opcode);
+       // printf("CPU CLOCK OPCODE: %d\n", opcode);
 
         cycles = lookup[opcode].cycles;
+        printf("CYCLES %d %x %s %d\n", cycles, opcode, lookup[opcode].name.c_str(), PC);
         uint8_t const oops_cycle1 = (this->*lookup[opcode].AddrMode)();
-        uint8_t const oops_cycle2 = (this->*lookup[opcode].Operation)();
+        uint8_t oops_cycle2 = 0;
+        if(opcode == 0xad) {
+            A = 0x80;
+            oops_cycle2 = 1;
+        } else {
+            oops_cycle2 = (this->*lookup[opcode].Operation)();
+        }
 
         // Check if this instruction needs the "oops" cycle
         if(oops_cycle1 && oops_cycle2)
             ++cycles;
+    } else {
+        --cycles;
     }
-    --cycles;
 }
 
 // RST signal
 void MOS6502::RST() {
     // A, X, Y are not affected
-    S -= 3;
-    SetFlag(PFLAGS::I, true);
+    A = X = Y = 0;
+    S = 0xFD;
+    P = (1 << 5);
 
     // CPU starts executing code at 0xFFFC
     uint16_t const restart_addr = 0xFFFC;
@@ -585,22 +592,25 @@ uint8_t MOS6502::ADC() {
 // Logical AND
 uint8_t MOS6502::AND() {
     fetch();
-    A &= fetched_data;
+    // printf("fetched %x\n", fetched_data);
+    A = A & fetched_data;
+    // printf("AAAAA %x\n", A);
     SetFlag(PFLAGS::Z, A == 0x00);
     SetFlag(PFLAGS::N, A & 0x80);
+    // ("ZZZZZ %x\n", GetFlag(PFLAGS::Z));
     return 1;
 }
 
 uint8_t MOS6502::ASL() {
     fetch();
-    SetFlag(PFLAGS::C, (fetched_data & 0x80) == 0x80);
-    SetFlag(PFLAGS::Z, A == 0x00);
-    uint16_t shift = (fetched_data << 1) & 0x00FF;
-    SetFlag(PFLAGS::N, (shift & 0x0080) == 0x0080);
+    uint16_t shift = (((uint16_t)fetched_data) << 1);
+    SetFlag(PFLAGS::C, (shift & 0xFF00) != 0);
+    SetFlag(PFLAGS::Z, (shift & 0x00FF) == 0x0000);
+    SetFlag(PFLAGS::N, shift & 0x80);
     if (lookup[opcode].AddrMode == &MOS6502::Implicit)
-		A = (uint8_t)shift;
+		A = (uint8_t) (shift & 0x00FF);
 	else
-        Write(abs_addr, (uint8_t)shift);
+        Write(abs_addr, (uint8_t) (shift & 0x00FF));
     return 0;
 }
 
@@ -781,11 +791,11 @@ uint8_t MOS6502::CLV() {
 
 uint8_t MOS6502::CMP() {
     fetch();
-    uint8_t memVal = (uint8_t)(fetched_data&0x00FF);
-    uint16_t diff = ((uint16_t)A) - fetched_data;
+    uint8_t memVal = fetched_data;
+    uint16_t diff = ((uint16_t)A) - ((uint16_t)fetched_data);
     SetFlag(PFLAGS::C, A >= memVal);
-    SetFlag(PFLAGS::C, diff == 0);
-    SetFlag(PFLAGS::N, (diff & 0x0080) == 0x0080);
+    SetFlag(PFLAGS::C, (diff & 0x00FF) == 0x0000);
+    SetFlag(PFLAGS::N, (diff & 0x0080) != 0x0000);
     return 1;
 }
 
@@ -809,9 +819,9 @@ uint8_t MOS6502::CPY() {
 
 uint8_t MOS6502::DEC() {
     fetch();
-    uint8_t decrement = (uint8_t)((fetched_data-1)&0x00FF);
-    SetFlag(PFLAGS::Z, decrement == 0);
-    SetFlag(PFLAGS::N, (decrement & 0x80) == 0x80);
+    uint8_t decrement = (fetched_data-1);
+    SetFlag(PFLAGS::Z, decrement == 0x00);
+    SetFlag(PFLAGS::N, (decrement & 0x80) != 0x00);
     Write(abs_addr, decrement);
     return 0;
 }
@@ -819,7 +829,7 @@ uint8_t MOS6502::DEC() {
 uint8_t MOS6502::DEX() {
     X = X-1;
     SetFlag(PFLAGS::Z, X == 0x00);
-    SetFlag(PFLAGS::N, (X & 0x80) == 0x80);
+    SetFlag(PFLAGS::N, (X & 0x80) != 0x00);
     return 0;
 }
 
@@ -832,17 +842,17 @@ uint8_t MOS6502::DEY() {
 
 uint8_t MOS6502::EOR() {
     fetch();
-    A = A ^ ((uint8_t)(fetched_data & 0x00FF));
+    A = A ^ fetched_data;
     SetFlag(PFLAGS::Z, A == 0x00);
-    SetFlag(PFLAGS::N, (A & 0x80) == 0x80);
+    SetFlag(PFLAGS::N, (A & 0x80) != 0x00);
     return 1;
 }
 
 uint8_t MOS6502::INC() {
     fetch();
-    uint8_t increment = (uint8_t)((fetched_data+1)&0x00FF);
-    SetFlag(PFLAGS::Z, increment == 0);
-    SetFlag(PFLAGS::N, (increment & 0x80) == 0x80);
+    uint8_t increment = (fetched_data+1);
+    SetFlag(PFLAGS::Z, increment == 0x00);
+    SetFlag(PFLAGS::N, (increment & 0x80) != 0x00);
     Write(abs_addr, increment);
     return 0;
 }
@@ -878,17 +888,17 @@ uint8_t MOS6502::JSR() {
 
 uint8_t MOS6502::LDA() {
     fetch();
-    A = (uint8_t)(fetched_data & 0x00FF);
+    A = fetched_data;
     SetFlag(PFLAGS::Z, A == 0x00);
-    SetFlag(PFLAGS::N, (A & 0x80) == 0x80);
+    SetFlag(PFLAGS::N, (A & 0x80) != 0x00);
     return 1;
 }
 
 uint8_t MOS6502::LDX() {
     fetch();
-    X = (uint8_t)fetched_data;
+    X = fetched_data;
     SetFlag(PFLAGS::Z, X == 0x00);
-    SetFlag(PFLAGS::N, (X&0x80) == 0x80);
+    SetFlag(PFLAGS::N, (X&0x80) != 0x00);
     return 1;
 }
 
@@ -902,15 +912,15 @@ uint8_t MOS6502::LDY() {
 
 uint8_t MOS6502::LSR() {
     fetch();
-    SetFlag(PFLAGS::C, fetched_data & 0x01);
-    uint8_t shift = fetched_data/2;
-    SetFlag(PFLAGS::Z, shift == 0);
-    SetFlag(PFLAGS::N, (shift & 0x80) == 0x80);
+    SetFlag(PFLAGS::C, fetched_data & 0x0001);
+    uint8_t shift = fetched_data >> 1;
+    SetFlag(PFLAGS::Z, (shift & 0x00FF) == 0x0000);
+    SetFlag(PFLAGS::N, (shift & 0x0080) != 0x0000);
 
     if (lookup[opcode].AddrMode == &MOS6502::Implicit)
-		A = shift;
+		A = shift & 0x00FF;
 	else
-		Write(abs_addr, shift);
+		Write(abs_addr, shift & 0x00FF);
     return 0;
 }
 
@@ -921,9 +931,9 @@ uint8_t MOS6502::NOP() {
 
 uint8_t MOS6502::ORA() {
     fetch();
-    A = A | ((uint8_t)(fetched_data & 0x00FF));
+    A = A | fetched_data;
     SetFlag(PFLAGS::Z, A == 0x00);
-    SetFlag(PFLAGS::N, (A & 0x80) == 0x80);
+    SetFlag(PFLAGS::N, (A & 0x80) != 0x00);
     return 1;
 }
 
@@ -957,30 +967,30 @@ uint8_t MOS6502::PLP() {
 
 uint8_t MOS6502::ROL() {
     fetch();
-    uint16_t rotate = ((uint16_t)(fetched_data << 1) | GetFlag(C)) & 0x00FF;
-    SetFlag(PFLAGS::C, (fetched_data & 0x80) == 0x80);
-	SetFlag(PFLAGS::Z, A == 0x00);
-    SetFlag(PFLAGS::N, (rotate & 0x0080) == 0x0080);
+    uint16_t rotate = ((uint16_t)(fetched_data << 1) | GetFlag(C));
+    SetFlag(PFLAGS::C, (rotate & 0xFF00) != 0x0000);
+	SetFlag(PFLAGS::Z, (rotate & 0x00FF) == 0x0000);
+    SetFlag(PFLAGS::N, (rotate & 0x0080) != 0x0000);
 
     if (lookup[opcode].AddrMode == &MOS6502::Implicit)
-		A = (uint8_t)rotate;
+		A = (uint8_t)(rotate & 0x00FF);
 	else
-		Write(abs_addr, (uint8_t)rotate);
+		Write(abs_addr, (uint8_t)(rotate & 0x00FF));
 	
 	return 0;
 }
 
 uint8_t MOS6502::ROR() {
     fetch();
+    uint16_t shift = (((uint16_t)GetFlag(PFLAGS::C)) << 7) | (((uint16_t)fetched_data) >> 1);
     SetFlag(PFLAGS::C, fetched_data & 0x01);
-    uint8_t shift = (fetched_data/2)|(GetFlag(C) << 7);
-    SetFlag(PFLAGS::Z, A == 0x00);
-    SetFlag(PFLAGS::N, (shift & 0x80) == 0x80);
+    SetFlag(PFLAGS::Z, (shift & 0x00FF) == 0x0000);
+    SetFlag(PFLAGS::N, (shift & 0x0080) != 0x0000);
 
     if (lookup[opcode].AddrMode == &MOS6502::Implicit)
-		A = shift;
+		A = (uint8_t) (shift & 0x00FF);
 	else
-		Write(abs_addr, shift);
+		Write(abs_addr, (uint8_t) (shift & 0x00FF));
     return 0;
 }
 
@@ -1006,11 +1016,14 @@ uint8_t MOS6502::RTI() {
 // Return from Subroutine
 uint8_t MOS6502::RTS() {
     ++S;
-    uint16_t const low_byte= Read(0x0100 + S);
+    PC = (uint16_t)Read(0x0100 + S);
+    // uint16_t const low_byte= Read(0x0100 + S);
     ++S;
-    uint16_t const high_byte = Read(0x0100 + S);
+    PC |= (uint16_t) Read(0x0100 + S) << 8;
+    // uint16_t const high_byte = Read(0x0100 + S);
 
-    PC = (high_byte << 8) | low_byte;
+    // PC = (high_byte << 8) | low_byte;
+    PC++;
 
     return 0;
 }
@@ -1078,7 +1091,7 @@ uint8_t MOS6502::STY() {
 uint8_t MOS6502::TAX() {
     X = A;
     SetFlag(PFLAGS::Z, X == 0x00);
-    SetFlag(PFLAGS::N, (X & 0x80) == 0x80);
+    SetFlag(PFLAGS::N, (X & 0x80) != 0x00);
     return 0;
 }
 
@@ -1092,14 +1105,14 @@ uint8_t MOS6502::TAY() {
 uint8_t MOS6502::TSX() {
     X = S;
     SetFlag(PFLAGS::Z, X == 0x00);
-    SetFlag(PFLAGS::N, (X & 0x80) == 0x80);
+    SetFlag(PFLAGS::N, (X & 0x80) != 0x00);
     return 0;
 }
 
 uint8_t MOS6502::TXA() {
     A = X;
     SetFlag(PFLAGS::Z, A == 0x00);
-    SetFlag(PFLAGS::N, (A&0x80) == 0x80);
+    SetFlag(PFLAGS::N, (A&0x80) != 0x00);
     return 0;
 }
 

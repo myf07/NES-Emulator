@@ -34,7 +34,7 @@ public:
     uint8_t Y = 0x00; // Index Y
     uint16_t PC = 0x0000; // Program Counter
     uint8_t S = 0xFD; // Stack Pointer
-    uint8_t P = 0x00; // Status Register (aka P)
+    uint8_t P = 0x34; // Status Register (aka P)
 
     // Connects bus once ready
     void ConnectBus(Bus *new_bus) {

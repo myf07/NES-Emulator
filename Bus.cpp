@@ -14,7 +14,7 @@ Bus::~Bus() {
 }
 
 uint8_t Bus::CPURead(uint16_t addr, bool bReadOnly) {
-    printf("BUS CPU READ, Address: %d, Read Only: %d\n", addr, bReadOnly);
+    // printf("BUS CPU READ, Address: %d, Read Only: %d\n", addr, bReadOnly);
     uint8_t data = 0x00;
 
     if(cartridge->cpuRead(addr, data)) { // intercept by Loader
@@ -39,7 +39,6 @@ uint8_t Bus::CPURead(uint16_t addr, bool bReadOnly) {
 }
 
 void Bus::CPUWrite(uint16_t addr, uint8_t data) {
-    printf("WRITING ON BUS......\n");
     if(cartridge->cpuWrite(addr, data)) { // intercept by Loader
         // Loader handled write, do nothing
     } else if(addr >= 0x0000 && addr <= 0x1FFF) { // writing to CPU
@@ -73,7 +72,7 @@ void Bus::RST() {
 
 void Bus::CLK() {
     
-    printf("CLOCK COUNTER: %ld\n", ClockCounter);
+    // if(ClockCounter % 100000 == 0) printf("CLOCK COUNTER: %ld\n", ClockCounter);
 
     // call CPU clock function
     if(ClockCounter % 3 == 0) { //cpu clock only ticks every 3 cycles, whereas ppu ticks every cycle
@@ -103,7 +102,10 @@ void Bus::CLK() {
     }
     
     // call PPU clock function
-    PPU.CLK();
+    if(ClockCounter % 100000 == 0) {
+        printf("Reloaded %d\n", ClockCounter);
+        PPU.CLK();
+    } 
 
     if(PPU.nmi) {
         PPU.nmi = false;

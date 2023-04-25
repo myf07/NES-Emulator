@@ -4,6 +4,11 @@
 #include "Loader.h"
 #include "main.h"
 
+/*
+Note: credit for the framework of this code goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
 struct Pixel {
     uint8_t r, b, g;
 };

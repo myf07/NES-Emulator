@@ -3,6 +3,12 @@
 #include "PPU.h"
 #include <iomanip>
 
+/*
+Note: credit for parts of this code, mainly the CPUWrite/Read and PPUWrite/Read functions
+goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
 PPU::PPU(){
 
   	Colors[0x00] = Pixel{84, 84, 84};
@@ -75,13 +81,11 @@ PPU::PPU(){
 }
 
 PPU::~PPU(){
-    //TODO
 }
 
 Pixel &PPU::GetColorFromPalette(uint8_t palette, uint8_t pixel){
     //palette << 2 to get to the right palette, pixel to select the right color
     return Colors[PPURead(0x3F00 + (palette << 2) + pixel) & 0x3F];
-	// return Colors[Palettes[palette * 4 + pixel]];
 }
 
 void PPU::DisplayPalette() {
@@ -95,9 +99,7 @@ void PPU::DisplayPalette() {
 					DisplayPixel(outputCol, outputRow, pi.r, pi.g, pi.b);
 				}
 			}
-			// printf("(%d, %d, %d) ", pi.r, pi.g, pi.b);
 		}
-		// printf("\n");
 	}
 }
 
@@ -112,7 +114,6 @@ void PPU::DisplayPatterns() {
 				uint8_t msb = PPURead(0 + spriteIdx + combinedIdxRow + 8);
 
 				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
-					// THIS MIGHT BE WRONG :) --------------------------------------------------
 					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
 					lsb >>= 1;
 					msb >>= 1;
@@ -135,7 +136,6 @@ void PPU::DisplayPatterns() {
 				uint8_t lsb = PPURead(0x1000 + spriteIdx + combinedIdxRow);
 				uint8_t msb = PPURead(0x1000 + spriteIdx + combinedIdxRow + 8);
 				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
-					// THIS MIGHT BE WRONG :) --------------------------------------------------
 					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
 					lsb >>= 1;
 					msb >>= 1;
@@ -165,29 +165,14 @@ void PPU::DisplayPixelNameTable(uint8_t table) {
 			uint16_t squareIndex = 2 * (nameTableRow % 2) + (nameTableCol % 2);
 
 			//which palette we are using
-			// uint8_t palette = (NameTable[0][metaRow * 32 + metaCol] & (0x03 << squareIndex));
-			// printf("GETTING PALETTE...\n");
 			uint16_t palette = PPURead(0x2000 + (metaRow * 32 + metaCol) ) & (0x03 << squareIndex);
 
-			// printf("GETTING NAMETABLE...\n");
 			uint16_t namePattern = PPURead(0x2000 + (nameTableRow * 32 + nameTableCol));
-			//uint16_t namePattern = NameTable[0][nameTableRow * 32 + nameTableCol];
-	/*
-			if(namePattern < 16){
-				printf("0");
-			}
-			printf("%x  ", namePattern);
-	*/
 
 			//uint8_t combinedPaletteColor[8][8];
 			for(uint8_t combinedIdxRow = 0; combinedIdxRow < 8; combinedIdxRow++) {
-				// printf("GETTING LSB...\n");
 				uint8_t lsb = PPURead(0x1000 + namePattern * 16 + combinedIdxRow);
-				// printf("GETTING MSB...\n");
 				uint8_t msb = PPURead(0x1000 + namePattern * 16 + 8 + combinedIdxRow);
-				// printf("LSB : %x, MSB: %x\n", lsb, msb);
-
-				// printf("LSB: %d, MSB: %d, COMBINED: %d\n", lsb, msb, combinedIdxRow);
 				for(int8_t combinedIdxCol = 7; combinedIdxCol >= 0; combinedIdxCol--) {
 					// THIS MIGHT BE WRONG :) --------------------------------------------------
 					uint8_t color = (lsb & 0x01) + 2*(msb & 0x01);
@@ -311,15 +296,6 @@ uint8_t PPU::PPURead(uint16_t addr, bool rdonly) {
 			data = NameTable[0][addr & 0x03FF];
 		if (addr >= 0x0C00 && addr <= 0x0FFF)
 			data = NameTable[1][addr & 0x03FF];
-        //TODO: mirror stuff
-		// if (addr >= 0x0000 && addr <= 0x03FF)
-		// 	data = NameTable[0][addr & 0x03FF];
-		// if (addr >= 0x0400 && addr <= 0x07FF)
-		// 	data = NameTable[0][addr & 0x03FF];
-		// if (addr >= 0x0800 && addr <= 0x0BFF)
-		// 	data = NameTable[1][addr & 0x03FF];
-		// if (addr >= 0x0C00 && addr <= 0x0FFF)
-		// 	data = NameTable[1][addr & 0x03FF];
 
     } else if(addr >= 0x3F00 && addr <= 0x3FFF) {
         addr &= 0x001F;
@@ -351,7 +327,6 @@ void PPU::PPUWrite(uint16_t addr, uint8_t data) {
 			NameTable[0][addr & 0x03FF] = data;
 		if (addr >= 0x0C00 && addr <= 0x0FFF)
 			NameTable[1][addr & 0x03FF] = data;
-        //TODO: mirror stuff
     } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
 		printf("PALETTE MODIFIED\n");
 		addr &= 0x001F;

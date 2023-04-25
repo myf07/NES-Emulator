@@ -1,6 +1,11 @@
 #include "Loader.h"
 #include <fstream>
 
+/*
+Note: credit for a lot of this code goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
  // struct for data header
 typedef struct DataHeader {
     char name[4];
@@ -28,15 +33,6 @@ Loader::Loader(const std::string &fName) {
 
         // determine mapper ID
         mapperID = ((header.mapper2 >> 4) << 4 | (header.mapper1 >> 4));
-
-        printf("PRG CHUNKS: %d\n", header.prgChunks);
-        printf("CHR CHUNKS: %d\n", header.chrChunks);
-        printf("Header.mapper1: %d\n", header.mapper1);
-        printf("Header.mapper2: %d\n", header.mapper2);
-        printf("PRG RAM SIZE: %d\n", header.prgRamSize);
-        printf("tv System 1: %d\n", header.tvSystem1);
-        printf("tv System 2: %d\n", header.tvSystem2);
-        printf("Mapper ID: %d\n", mapperID);
 
         uint8_t fileType = 1;
         if ((header.mapper2 & 0x0C) == 0x08) 

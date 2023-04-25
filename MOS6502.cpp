@@ -1,6 +1,11 @@
 #include "Bus.h"
 #include "MOS6502.h"
 
+/*
+Note: credit for the framework of this code goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
 // Constructor for CPU
 MOS6502::MOS6502() {
     lookup = {

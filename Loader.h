@@ -5,6 +5,11 @@
 
 #include "Mapper_0.h"
 
+/*
+Note: credit for the framework of this code goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
 using namespace std;
 
 class Loader {

@@ -1,5 +1,10 @@
 #include "Bus.h"
 
+/*
+Note: credit for the framework of this code goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
 Bus::Bus() {
     // Clear RAM
     for(uint8_t &x : CPURAM)
@@ -14,7 +19,6 @@ Bus::~Bus() {
 }
 
 uint8_t Bus::CPURead(uint16_t addr, bool bReadOnly) {
-    // printf("BUS CPU READ, Address: %d, Read Only: %d\n", addr, bReadOnly);
     uint8_t data = 0x00;
 
     if(cartridge->cpuRead(addr, data)) { // intercept by Loader
@@ -71,12 +75,9 @@ void Bus::RST() {
 }
 
 void Bus::CLK() {
-    
-    // if(ClockCounter % 100000 == 0) printf("CLOCK COUNTER: %ld\n", ClockCounter);
 
     // call CPU clock function
     if(ClockCounter % 3 == 0) { //cpu clock only ticks every 3 cycles, whereas ppu ticks every cycle
-        /*
         if(DMA_Transfer) {
             if(DMA_Stall) {
                     //stall for 1 or 2 cycles
@@ -97,7 +98,6 @@ void Bus::CLK() {
         } else {
             cpu.CLK();
         }
-        */
        cpu.CLK();
     }
     

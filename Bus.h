@@ -6,6 +6,11 @@
 #include "MOS6502.h"
 #include "PPU.h"
 
+/*
+Note: credit for the framework of this code goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
 class Bus {
 public: // Devices connected to bus
     MOS6502 cpu;

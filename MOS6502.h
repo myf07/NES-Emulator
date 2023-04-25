@@ -3,6 +3,11 @@
 #include <string>
 #include <vector>
 
+/*
+Note: credit for the framework of this code goes to OneLoneCoder, who's tutorial we followed:
+https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf
+*/
+
 // Forward declare Bus
 class Bus;
 
